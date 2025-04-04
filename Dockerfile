@@ -4,6 +4,20 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
+# --- START Locale Configuration ---
+# Install locales package
+RUN apt-get update && apt-get install -y --no-install-recommends locales
+
+# Uncomment/add the da_DK.UTF-8 locale to /etc/locale.gen
+RUN sed -i '/^# da_DK.UTF-8/s/^# //' /etc/locale.gen && \
+    locale-gen
+
+# Set locale environment variables
+ENV LANG da_DK.UTF-8  
+ENV LANGUAGE da_DK:da
+ENV LC_ALL da_DK.UTF-8  
+# --- END Locale Configuration ---
+
 # Copy the requirements file into the container at /app
 COPY requirements.txt requirements.txt
 
@@ -23,11 +37,7 @@ EXPOSE 8000
 # Define environment variables (optional, can also be passed during run)
 # ENV NAME=World
 
-# Run uvicorn when the container launches
-# Use 0.0.0.0 to bind to all network interfaces within the container
-# The --reload flag is typically NOT used in production images, 
-# but can be useful during development if you mount your code as a volume.
-# For a production image, remove --reload.
-# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 
-# If you need reload during development with volume mounts, use this instead:
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"] 
+# Run sync, seed, then uvicorn when the container launches
+CMD python scripts/sync_artists_db.py && \
+    python scripts/seed_users.py && \
+    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 

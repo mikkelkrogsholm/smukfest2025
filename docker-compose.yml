@@ -7,15 +7,16 @@ services:
     ports:
       - "8000:8000" # Map host port 8000 to container port 8000
     volumes:
-      # Mount local code directories into the container for hot-reloading
+      # 1. Named volume for persistent data in /app (incl. DB)
+      - smukfest_db_data:/app 
+      # 2. Code mounts for hot-reload (overwrites code inside /app)
       - ./app:/app/app 
       - ./scripts:/app/scripts
-      # Note: The database file is currently copied in the Dockerfile.
-      # If you wanted the DB file to persist outside the container or use the local one,
-      # you could mount it as a volume too:
-      # - ./smukfest_artists.db:/app/smukfest_artists.db 
     env_file:
       - .env # Load environment variables from the .env file in the project root
     # The command is taken from the Dockerfile CMD instruction.
     # You could override it here if needed, e.g.:
     # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
+
+volumes:
+  smukfest_db_data: 

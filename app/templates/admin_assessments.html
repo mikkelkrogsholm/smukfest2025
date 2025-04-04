@@ -1,182 +1,147 @@
 {% extends "base.html" %}
 
-{% block title %}Admin - Risk Assessments{% endblock %}
+{% block title %}Administrer Risikovurderinger{% endblock %}
 
 {% block content %}
-<h2 class="text-2xl font-semibold mb-6 text-gray-800">Risk Assessments</h2>
+<h1 class="text-2xl font-semibold mb-6">Administrer Kunstner Risikovurderinger</h1>
 
 <!-- Filter Section -->
 <div class="mb-6 p-4 bg-gray-100 rounded-lg shadow">
-    <h3 class="text-lg font-semibold mb-3">Filter Artists</h3>
+    <h3 class="text-lg font-semibold mb-3">Filtrer Kunstnere</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-            <label for="filter-artist-name" class="block text-sm font-medium text-gray-700 mb-1">Artist Name/Slug</label>
-            <input type="text" id="filter-artist-name" placeholder="Search artist..."
+            <label for="filter-artist-name" class="block text-sm font-medium text-gray-700 mb-1">Kunstnernavn/Slug</label>
+            <input type="text" id="filter-artist-name" placeholder="Søg kunstner..."
                    class="mt-1 block w-full px-3 py-2 text-base border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
         <div>
-            <label for="filter-risk-level" class="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
+            <label for="filter-risk-level" class="block text-sm font-medium text-gray-700 mb-1">Risikoniveau</label>
             <select id="filter-risk-level" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                <option value="all">All Risks</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="none">Not Set</option>
+                <option value="all">Alle Niveauer</option>
+                <option value="low">Lav</option>
+                <option value="medium">Mellem</option>
+                <option value="high">Høj</option>
+                <option value="none">Ikke sat</option>
             </select>
         </div>
         <div class="flex items-end">
-            <button type="button" id="reset-admin-filters" class="mt-1 w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Reset Filters</button>
+            <button type="button" id="reset-admin-filters" class="mt-1 w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Nulstil Filtre</button>
         </div>
     </div>
 </div>
 <!-- End Filter Section -->
 
 
-<div class="bg-white rounded-lg shadow-md overflow-hidden">
+<div class="bg-white shadow-md rounded-lg overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artist</th>
-                    <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Risk</th>
-                    <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Intensity</th>
-                    <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Density</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Crowd Profile</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kunstner</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risiko</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Intensitet</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tæthed</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Handling</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200" id="admin-assessment-table-body">
+            <tbody class="bg-white divide-y divide-gray-200">
                 {% for item in artists_assessments %}
-                    {% set artist = item.artist %}
-                    {% set assessment = item.assessment %}
-                    {# Display Row - Add data attributes for filtering #}
-                    <tr id="display-row-{{ artist.slug }}" class="assessment-row hover:bg-gray-50"
-                        data-artist-slug="{{ artist.slug }}"
-                        data-artist-title="{{ artist.title | lower }}"
-                        data-risk-level="{{ assessment.risk_level if assessment else 'none' }}">
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    {% if artist.image_url %}
-                                        <img class="h-10 w-10 rounded-full object-cover" src="{{ artist.image_url }}" alt="{{ artist.title }}">
-                                    {% else %}
-                                        <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">No Img</div>
-                                    {% endif %}
+                {% set artist = item.artist %}
+                {% set assessment = item.assessment %}
+                <tr id="artist-{{ artist.slug }}" class="hover:bg-gray-50 align-top">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            {% if artist.image_url %}
+                                <img class="h-10 w-10 rounded-full object-cover" src="{{ artist.image_url }}" alt="{{ artist.title }}">
+                            {% else %}
+                                <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">Intet Billede</div>
+                            {% endif %}
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900 hover:text-indigo-600">
+                                     <a href="{{ url_for('read_artist_detail', artist_slug=artist.slug) }}" title="Se detaljer for {{ artist.title }}">
+                                        {{ artist.title }}
+                                    </a>
                                 </div>
-                                <div class="ml-3">
-                                    <div class="text-sm font-medium text-gray-900 hover:text-indigo-600">
-                                        <a href="{{ url_for('read_artist_detail', artist_slug=artist.slug) }}" title="View details for {{ artist.title }}">
-                                            {{ artist.title }}
-                                        </a>
-                                    </div>
-                                    <div class="text-xs text-gray-500">{{ artist.slug }}</div>
+                                <div class="text-xs text-gray-500">{{ artist.slug }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {% if assessment and assessment.risk_level == 'high' %}text-red-600{% elif assessment and assessment.risk_level == 'medium' %}text-yellow-600{% elif assessment and assessment.risk_level == 'low' %}text-green-600{% else %}text-gray-500{% endif %}">
+                        {{ assessment.risk_level | capitalize if assessment else 'Ikke sat' }}
+                    </td>
+                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {% if assessment and assessment.intensity_level == 'high' %}text-red-600{% elif assessment and assessment.intensity_level == 'medium' %}text-yellow-600{% elif assessment and assessment.intensity_level == 'low' %}text-green-600{% else %}text-gray-500{% endif %}">
+                        {{ assessment.intensity_level | capitalize if assessment else 'Ikke sat' }}
+                    </td>
+                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {% if assessment and assessment.density_level == 'high' %}text-red-600{% elif assessment and assessment.density_level == 'medium' %}text-yellow-600{% elif assessment and assessment.density_level == 'low' %}text-green-600{% else %}text-gray-500{% endif %}">
+                        {{ assessment.density_level | capitalize if assessment else 'Ikke sat' }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button type="button" 
+                                data-artist-slug="{{ artist.slug }}" 
+                                class="edit-button text-indigo-600 hover:text-indigo-900">
+                            Rediger / Se Detaljer
+                        </button>
+                    </td>
+                </tr>
+                <tr class="edit-form-row bg-gray-100 hidden" id="edit-form-{{ artist.slug }}">
+                    <td colspan="5" class="px-6 py-4">
+                        <form class="assessment-form space-y-4" data-artist-slug="{{ artist.slug }}">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="risk_level-{{ artist.slug }}" class="block text-sm font-medium text-gray-700">Risikoniveau</label>
+                                    <select id="risk_level-{{ artist.slug }}" name="risk_level" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                        <option value="" {% if not assessment or not assessment.risk_level %}selected{% endif %}>Vælg niveau...</option>
+                                        <option value="low" {% if assessment and assessment.risk_level == 'low' %}selected{% endif %}>Lav</option>
+                                        <option value="medium" {% if assessment and assessment.risk_level == 'medium' %}selected{% endif %}>Mellem</option>
+                                        <option value="high" {% if assessment and assessment.risk_level == 'high' %}selected{% endif %}>Høj</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="intensity_level-{{ artist.slug }}" class="block text-sm font-medium text-gray-700">Intensitetsniveau</label>
+                                    <select id="intensity_level-{{ artist.slug }}" name="intensity_level" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                        <option value="" {% if not assessment or not assessment.intensity_level %}selected{% endif %}>Vælg niveau...</option>
+                                        <option value="low" {% if assessment and assessment.intensity_level == 'low' %}selected{% endif %}>Lav</option>
+                                        <option value="medium" {% if assessment and assessment.intensity_level == 'medium' %}selected{% endif %}>Mellem</option>
+                                        <option value="high" {% if assessment and assessment.intensity_level == 'high' %}selected{% endif %}>Høj</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="density_level-{{ artist.slug }}" class="block text-sm font-medium text-gray-700">Tæthedsniveau</label>
+                                    <select id="density_level-{{ artist.slug }}" name="density_level" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                        <option value="" {% if not assessment or not assessment.density_level %}selected{% endif %}>Vælg niveau...</option>
+                                        <option value="low" {% if assessment and assessment.density_level == 'low' %}selected{% endif %}>Lav</option>
+                                        <option value="medium" {% if assessment and assessment.density_level == 'medium' %}selected{% endif %}>Mellem</option>
+                                        <option value="high" {% if assessment and assessment.density_level == 'high' %}selected{% endif %}>Høj</option>
+                                    </select>
                                 </div>
                             </div>
-                        </td>
-                        <td class="assessment-display-cell px-2 py-3 text-center text-sm font-semibold 
-                                   {% if assessment and assessment.risk_level == 'high' %}text-red-600
-                                   {% elif assessment and assessment.risk_level == 'medium' %}text-yellow-600
-                                   {% elif assessment and assessment.risk_level == 'low' %}text-green-600
-                                   {% else %}text-gray-400{% endif %}">
-                            <span class="risk-level-display">{{ assessment.risk_level if assessment else 'N/A' }}</span>
-                        </td>
-                        <td class="assessment-display-cell px-2 py-3 text-center text-sm 
-                                   {% if assessment and assessment.intensity_level == 'high' %}text-red-600
-                                   {% elif assessment and assessment.intensity_level == 'medium' %}text-yellow-600
-                                   {% elif assessment and assessment.intensity_level == 'low' %}text-green-600
-                                   {% else %}text-gray-400{% endif %}">
-                            <span class="intensity-level-display">{{ assessment.intensity_level if assessment else 'N/A' }}</span>
-                        </td>
-                        <td class="assessment-display-cell px-2 py-3 text-center text-sm 
-                                   {% if assessment and assessment.density_level == 'high' %}text-red-600
-                                   {% elif assessment and assessment.density_level == 'medium' %}text-yellow-600
-                                   {% elif assessment and assessment.density_level == 'low' %}text-green-600
-                                   {% else %}text-gray-400{% endif %}">
-                             <span class="density-level-display">{{ assessment.density_level if assessment else 'N/A' }}</span>
-                        </td>
-                        <td class="assessment-display-cell px-4 py-3 text-sm text-gray-600 max-w-xs truncate remarks-display" title="{{ assessment.remarks if assessment else '' }}">{{ assessment.remarks if assessment else '-' }}</td>
-                        <td class="assessment-display-cell px-4 py-3 text-sm text-gray-600 max-w-xs truncate crowd-profile-display" title="{{ assessment.crowd_profile if assessment else '' }}">{{ assessment.crowd_profile if assessment else '-' }}</td>
-                        <td class="assessment-display-cell px-4 py-3 text-sm text-gray-600 max-w-xs truncate notes-display" title="{{ assessment.notes if assessment else '' }}">{{ assessment.notes if assessment else '-' }}</td>
-                        <td class="assessment-display-cell px-4 py-3 whitespace-nowrap text-xs text-gray-500 updated-at-display">
-                            {{ assessment.updated_at | datetimeformat if assessment and assessment.updated_at else 'Never' }}
-                        </td>
-                        <td class="assessment-display-cell px-4 py-3 text-center">
-                            <button class="edit-btn text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-                                    data-artist-slug="{{ artist.slug }}"
-                                    data-risk="{{ assessment.risk_level if assessment else '' }}"
-                                    data-intensity="{{ assessment.intensity_level if assessment else '' }}"
-                                    data-density="{{ assessment.density_level if assessment else '' }}"
-                                    data-remarks="{{ assessment.remarks if assessment else '' }}"
-                                    data-crowd_profile="{{ assessment.crowd_profile if assessment else '' }}"
-                                    data-notes="{{ assessment.notes if assessment else '' }}">
-                                Edit
-                            </button>
-                        </td>
-                    </tr>
-                    {# Edit Form Row - Add class 'assessment-row' #}
-                    <tr id="edit-form-row-{{ artist.slug }}" class="assessment-row hidden bg-gray-50"
-                        data-artist-slug="{{ artist.slug }}"
-                        data-artist-title="{{ artist.title | lower }}"
-                        data-risk-level="{{ assessment.risk_level if assessment else 'none' }}">
-                        <td></td>
-                        <td colspan="8" class="p-4">
-                            <form class="edit-form space-y-3" data-artist-slug="{{ artist.slug }}">
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700">Risk</label>
-                                        <select name="risk_level" class="mt-1 block w-full pl-3 pr-10 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
-                                            <option value="">Select...</option>
-                                            <option value="low">Low</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="high">High</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700">Intensity</label>
-                                        <select name="intensity_level" class="mt-1 block w-full pl-3 pr-10 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
-                                            <option value="">Select...</option>
-                                            <option value="low">Low</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="high">High</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700">Density</label>
-                                        <select name="density_level" class="mt-1 block w-full pl-3 pr-10 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
-                                            <option value="">Select...</option>
-                                            <option value="low">Low</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="high">High</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700">Remarks</label>
-                                    <textarea name="remarks" rows="2" class="mt-1 block w-full text-sm border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700">Crowd Profile</label>
-                                    <textarea name="crowd_profile" rows="2" class="mt-1 block w-full text-sm border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700">Notes</label>
-                                    <textarea name="notes" rows="2" class="mt-1 block w-full text-sm border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                                </div>
-                                <div class="flex justify-end space-x-2 pt-2">
-                                    <span class="save-status text-sm text-green-600 font-medium mr-auto"></span>
-                                    <button type="button" class="cancel-edit-btn px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Cancel</button>
-                                    <button type="submit" class="save-btn inline-flex justify-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Save</button>
-                                </div>
-                            </form>
-                        </td>
-                    </tr>
+                            <div>
+                                <label for="remarks-{{ artist.slug }}" class="block text-sm font-medium text-gray-700">Bemærkninger</label>
+                                <textarea id="remarks-{{ artist.slug }}" name="remarks" rows="3" class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md">{{ assessment.remarks if assessment else '' }}</textarea>
+                            </div>
+                            <div>
+                                <label for="crowd_profile-{{ artist.slug }}" class="block text-sm font-medium text-gray-700">Publikumsprofil</label>
+                                <textarea id="crowd_profile-{{ artist.slug }}" name="crowd_profile" rows="3" class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md">{{ assessment.crowd_profile if assessment else '' }}</textarea>
+                            </div>
+                            <div>
+                                <label for="notes-{{ artist.slug }}" class="block text-sm font-medium text-gray-700">Interne Noter</label>
+                                <textarea id="notes-{{ artist.slug }}" name="notes" rows="3" class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md">{{ assessment.notes if assessment else '' }}</textarea>
+                            </div>
+                             <div class="text-xs text-gray-500">
+                                Sidst opdateret: {{ assessment.updated_at | datetimeformat if assessment and assessment.updated_at else 'Aldrig' }}
+                            </div>
+                            <div class="flex justify-end space-x-3">
+                                <span class="message-area text-sm text-green-600 mr-auto"></span> {# Area for success/error messages #}
+                                <button type="button" class="cancel-button px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Annuller</button>
+                                <button type="submit" class="save-button inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Gem Vurdering</button>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
                 {% else %}
-                    <tr>
-                        <td colspan="9" class="text-center text-gray-500 py-4">No artists found in the database. Run the sync script.</td>
-                    </tr>
+                <tr>
+                    <td colspan="5" class="text-center px-6 py-4 text-sm text-gray-500">Ingen kunstnere fundet.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -187,306 +152,105 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const tableBody = document.getElementById('admin-assessment-table-body');
-    const filterArtistNameInput = document.getElementById('filter-artist-name');
-    const filterRiskLevelSelect = document.getElementById('filter-risk-level');
-    const resetFiltersButton = document.getElementById('reset-admin-filters');
-    const allAssessmentRows = tableBody ? Array.from(tableBody.querySelectorAll('tr.assessment-row')) : [];
+    const editButtons = document.querySelectorAll('.edit-button');
+    const cancelButtons = document.querySelectorAll('.cancel-button');
+    const forms = document.querySelectorAll('.assessment-form');
 
-    // --- Scroll to Hashed Element ---
-    function scrollToHash() {
-        if (window.location.hash) {
-            const hash = window.location.hash; // e.g., #some-artist-slug
-            // We need the ID of the display row, which is "display-row-" + slug
-            const targetId = "display-row-" + hash.substring(1); // Remove '#'
-            const targetElement = document.getElementById(targetId);
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const slug = this.dataset.artistSlug;
+            const formRow = document.getElementById(`edit-form-${slug}`);
             
-            if (targetElement) {
-                console.log("Scrolling to element:", targetId);
-                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
-                // Optional: Add a temporary highlight
-                targetElement.classList.add('bg-blue-100'); // Temporary highlight class
-                setTimeout(() => {
-                    targetElement.classList.remove('bg-blue-100');
-                }, 2500); // Remove highlight after 2.5 seconds
-            } else {
-                 console.log("Target element not found for hash:", hash, "Expected ID:", targetId);
-            }
-        }
-    }
-    // --- End Scroll to Hashed Element ---
-
-    // --- Helper: Update Dropdown Color ---
-    function updateDropdownColor(selectElement) {
-        const value = selectElement.value;
-        selectElement.classList.remove(
-            'bg-green-100', 'border-green-300',
-            'bg-yellow-100', 'border-yellow-300',
-            'bg-red-100', 'border-red-300',
-            'bg-white', 'border-gray-300' 
-        );
-        selectElement.classList.add('border'); 
-        if (value === 'low') {
-            selectElement.classList.add('bg-green-100', 'border-green-300');
-        } else if (value === 'medium') {
-            selectElement.classList.add('bg-yellow-100', 'border-yellow-300');
-        } else if (value === 'high') {
-            selectElement.classList.add('bg-red-100', 'border-red-300');
-        } else {
-            selectElement.classList.add('bg-white', 'border-gray-300'); 
-        }
-    }
-
-    // --- Helper: Apply Admin Filters ---
-    function applyAdminFilters() {
-        const nameFilter = filterArtistNameInput.value.toLowerCase().trim();
-        const riskFilter = filterRiskLevelSelect.value;
-
-        allAssessmentRows.forEach(row => {
-            const artistTitle = row.dataset.artistTitle || '';
-            const artistSlug = row.dataset.artistSlug || '';
-            const riskLevel = row.dataset.riskLevel || 'none';
-
-            const nameMatch = nameFilter === '' || artistTitle.includes(nameFilter) || artistSlug.includes(nameFilter);
-            const riskMatch = riskFilter === 'all' || riskLevel === riskFilter;
-
-            // Show/hide both display and edit rows together
-            const slug = row.dataset.artistSlug;
-            const displayRow = document.getElementById(`display-row-${slug}`);
-            const editRow = document.getElementById(`edit-form-row-${slug}`);
+            // Hide all other forms before showing this one
+            document.querySelectorAll('.edit-form-row').forEach(row => {
+                if(row.id !== `edit-form-${slug}`) {
+                    row.classList.add('hidden');
+                }
+            });
             
-            // Determine visibility based on filters
-            const shouldBeVisible = nameMatch && riskMatch;
-            
-            // Apply visibility
-            if (displayRow) {
-                displayRow.style.display = shouldBeVisible ? '' : 'none';
-            }
-            // Also hide/show the edit row based on the filter result
-            if (editRow) {
-                 // Important: Only HIDE based on filter; showing is handled by edit/cancel buttons
-                 if (!shouldBeVisible) {
-                     editRow.style.display = 'none'; 
-                 }
-                 // We don't explicitly show the edit row here, 
-                 // because it should only become visible when the 'Edit' button is clicked.
-            }
+            // Toggle the display of the clicked form row
+            formRow.classList.toggle('hidden');
         });
-    }
-
-    // --- Event Listeners for Edit/Save/Cancel ---
-    tableBody?.addEventListener('click', function(event) {
-        // Edit button clicked
-        if (event.target.classList.contains('edit-btn')) {
-            const button = event.target;
-            const artistSlug = button.dataset.artistSlug;
-            const displayRow = document.getElementById(`display-row-${artistSlug}`);
-            const editFormRow = document.getElementById(`edit-form-row-${artistSlug}`);
-            const editForm = editFormRow?.querySelector('form.edit-form');
-
-            if (displayRow && editFormRow && editForm) {
-                // Populate form fields
-                editForm.querySelector('select[name="risk_level"]').value = button.dataset.risk || '';
-                editForm.querySelector('select[name="intensity_level"]').value = button.dataset.intensity || '';
-                editForm.querySelector('select[name="density_level"]').value = button.dataset.density || '';
-                editForm.querySelector('textarea[name="remarks"]').value = button.dataset.remarks || '';
-                editForm.querySelector('textarea[name="crowd_profile"]').value = button.dataset.crowd_profile || '';
-                editForm.querySelector('textarea[name="notes"]').value = button.dataset.notes || '';
-
-                 // Update dropdown colors based on initial values
-                updateDropdownColor(editForm.querySelector('select[name="risk_level"]'));
-                updateDropdownColor(editForm.querySelector('select[name="intensity_level"]'));
-                updateDropdownColor(editForm.querySelector('select[name="density_level"]'));
-                
-                // Reset save status message
-                const saveStatus = editForm.querySelector('.save-status');
-                 if (saveStatus) saveStatus.textContent = ''; 
-
-                // Hide display row, show edit row
-                displayRow.classList.add('hidden');
-                editFormRow.classList.remove('hidden');
-            }
-        }
-
-        // Cancel button clicked
-        if (event.target.classList.contains('cancel-edit-btn')) {
-            const button = event.target;
-            const editFormRow = button.closest('tr'); // Get the parent edit row <tr>
-            const artistSlug = editFormRow.dataset.artistSlug;
-            const displayRow = document.getElementById(`display-row-${artistSlug}`);
-
-            if (editFormRow && displayRow) {
-                // Hide edit row, show display row
-                editFormRow.classList.add('hidden');
-                displayRow.classList.remove('hidden');
-            }
-        }
     });
 
-    // --- Event Listeners for Save (Submit) ---
-    tableBody?.addEventListener('submit', async function(event) {
-        // Prevent default form submission which would reload the page
-        event.preventDefault();
-
-        if (event.target.classList.contains('edit-form')) {
-            const form = event.target;
-            const artistSlug = form.dataset.artistSlug;
-            const saveButton = form.querySelector('.save-btn');
-            const cancelButton = form.querySelector('.cancel-edit-btn');
-            const saveStatus = form.querySelector('.save-status');
-
-             // Disable buttons and show status
-            saveButton.disabled = true;
-            saveButton.textContent = 'Saving...';
-            cancelButton.disabled = true;
-            if(saveStatus) saveStatus.textContent = '';
-
-            // Collect form data
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-
-             // Convert empty strings to null for optional fields if needed by Pydantic model
-            for (const key in data) {
-                if (data[key] === '') {
-                    data[key] = null;
-                }
+    cancelButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Find the parent form row and hide it
+            this.closest('.edit-form-row').classList.add('hidden');
+            // Clear any previous messages
+            const messageArea = this.closest('form').querySelector('.message-area');
+            if(messageArea) {
+                messageArea.textContent = '';
+                messageArea.className = 'message-area text-sm mr-auto'; // Reset class
             }
+        });
+    });
 
-            console.log("Submitting assessment data:", data);
+    forms.forEach(form => {
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const slug = this.dataset.artistSlug;
+            const formData = new FormData(this);
+            const messageArea = this.querySelector('.message-area');
+            const saveButton = this.querySelector('.save-button');
+            
+            messageArea.textContent = 'Gemmer...';
+            messageArea.className = 'message-area text-sm text-gray-500 mr-auto';
+            saveButton.disabled = true;
+
+            // Convert FormData to JSON object, handling empty selects
+            const data = {};
+            formData.forEach((value, key) => {
+                // Only include non-empty values, especially for selects
+                if (value !== '') {
+                    data[key] = value;
+                }
+            });
 
             try {
-                const response = await fetch(`/api/assessments/${artistSlug}`, {
+                const response = await fetch(`/api/assessments/${slug}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // Include CSRF token header if necessary
+                        // Include credentials if needed, or handle via cookies
+                        // 'Authorization': 'Bearer YOUR_TOKEN' 
                     },
                     body: JSON.stringify(data)
                 });
 
-                if (!response.ok) {
-                     const errorData = await response.json();
-                     console.error("Save failed:", errorData);
-                     throw new Error(errorData.detail || `HTTP error! Status: ${response.status}`);
-                }
+                const result = await response.json(); // Always try to parse JSON
 
-                const savedAssessment = await response.json();
-                console.log("Save successful:", savedAssessment);
-
-                // Update the display row with new data
-                const displayRow = document.getElementById(`display-row-${artistSlug}`);
-                if (displayRow) {
-                    displayRow.querySelector('.risk-level-display').textContent = savedAssessment.risk_level || 'N/A';
-                    displayRow.querySelector('.intensity-level-display').textContent = savedAssessment.intensity_level || 'N/A';
-                    displayRow.querySelector('.density-level-display').textContent = savedAssessment.density_level || 'N/A';
-                    displayRow.querySelector('.remarks-display').textContent = savedAssessment.remarks || '-';
-                    displayRow.querySelector('.remarks-display').title = savedAssessment.remarks || '';
-                    displayRow.querySelector('.crowd-profile-display').textContent = savedAssessment.crowd_profile || '-';
-                    displayRow.querySelector('.crowd-profile-display').title = savedAssessment.crowd_profile || '';
-                    displayRow.querySelector('.notes-display').textContent = savedAssessment.notes || '-'; // Assuming notes are admin-only or less critical to display fully
-                     displayRow.querySelector('.notes-display').title = savedAssessment.notes || ''; 
-                     displayRow.querySelector('.updated-at-display').textContent = new Date(savedAssessment.updated_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short'}); // Format nicely
-
-                     // Update risk level color on the display row
-                     const riskCell = displayRow.querySelector('.assessment-display-cell:nth-child(2)'); // Second cell for risk
-                     riskCell.classList.remove('text-red-600', 'text-yellow-600', 'text-green-600', 'text-gray-400');
-                     if (savedAssessment.risk_level === 'high') riskCell.classList.add('text-red-600');
-                     else if (savedAssessment.risk_level === 'medium') riskCell.classList.add('text-yellow-600');
-                     else if (savedAssessment.risk_level === 'low') riskCell.classList.add('text-green-600');
-                     else riskCell.classList.add('text-gray-400');
-                     
-                     // Update intensity level color
-                     const intensityCell = displayRow.querySelector('.assessment-display-cell:nth-child(3)');
-                     intensityCell.classList.remove('text-red-600', 'text-yellow-600', 'text-green-600', 'text-gray-400');
-                     if (savedAssessment.intensity_level === 'high') intensityCell.classList.add('text-red-600');
-                     else if (savedAssessment.intensity_level === 'medium') intensityCell.classList.add('text-yellow-600');
-                     else if (savedAssessment.intensity_level === 'low') intensityCell.classList.add('text-green-600');
-                     else intensityCell.classList.add('text-gray-400');
-
-                     // Update density level color
-                     const densityCell = displayRow.querySelector('.assessment-display-cell:nth-child(4)');
-                     densityCell.classList.remove('text-red-600', 'text-yellow-600', 'text-green-600', 'text-gray-400');
-                     if (savedAssessment.density_level === 'high') densityCell.classList.add('text-red-600');
-                     else if (savedAssessment.density_level === 'medium') densityCell.classList.add('text-yellow-600');
-                     else if (savedAssessment.density_level === 'low') densityCell.classList.add('text-green-600');
-                     else densityCell.classList.add('text-gray-400');
-
-
-                    // Update data attributes on the edit button for future edits
-                    const editButton = displayRow.querySelector('.edit-btn');
-                    editButton.dataset.risk = savedAssessment.risk_level || '';
-                    editButton.dataset.intensity = savedAssessment.intensity_level || '';
-                    editButton.dataset.density = savedAssessment.density_level || '';
-                    editButton.dataset.remarks = savedAssessment.remarks || '';
-                    editButton.dataset.crowd_profile = savedAssessment.crowd_profile || '';
-                    editButton.dataset.notes = savedAssessment.notes || '';
-
-                     // Update the row's data-risk-level for filtering
-                    displayRow.dataset.riskLevel = savedAssessment.risk_level || 'none';
-                    const editFormRow = document.getElementById(`edit-form-row-${artistSlug}`);
-                     if (editFormRow) {
-                        editFormRow.dataset.riskLevel = savedAssessment.risk_level || 'none';
-                     }
-                }
-
-                // Show success status briefly
-                if(saveStatus) {
-                     saveStatus.textContent = 'Saved!';
-                     saveStatus.classList.remove('text-red-600');
-                     saveStatus.classList.add('text-green-600');
-                     setTimeout(() => { if(saveStatus) saveStatus.textContent = ''; }, 2000);
-                }
-                
-                // Re-enable buttons and reset text
-                saveButton.disabled = false;
-                saveButton.textContent = 'Save';
-                cancelButton.disabled = false;
-                
-                // Optionally, hide form and show display row after a short delay
-                setTimeout(() => {
-                    const editFormRow = document.getElementById(`edit-form-row-${artistSlug}`);
-                    if (editFormRow && displayRow) {
-                        editFormRow.classList.add('hidden');
-                        displayRow.classList.remove('hidden');
+                if (response.ok) {
+                    messageArea.textContent = 'Vurdering gemt!';
+                    messageArea.className = 'message-area text-sm text-green-600 mr-auto';
+                    // Update the main table row with new values (optional but good UX)
+                    const mainRow = document.getElementById(`artist-${slug}`);
+                    if(mainRow) {
+                         mainRow.cells[1].textContent = result.risk_level ? result.risk_level.charAt(0).toUpperCase() + result.risk_level.slice(1) : 'Ikke sat';
+                         mainRow.cells[2].textContent = result.intensity_level ? result.intensity_level.charAt(0).toUpperCase() + result.intensity_level.slice(1) : 'Ikke sat';
+                         mainRow.cells[3].textContent = result.density_level ? result.density_level.charAt(0).toUpperCase() + result.density_level.slice(1) : 'Ikke sat';
+                         // Update colors too if needed
                     }
-                }, 500); // Short delay after showing "Saved!" message
-
+                    // Optionally hide form after successful save after a short delay
+                    // setTimeout(() => {
+                    //     this.closest('.edit-form-row').classList.add('hidden');
+                    //     messageArea.textContent = ''; 
+                    // }, 2000);
+                } else {
+                    // Use detail from JSON response if available, otherwise use status text
+                    messageArea.textContent = `Fejl: ${result.detail || response.statusText}`;
+                    messageArea.className = 'message-area text-sm text-red-600 mr-auto';
+                }
             } catch (error) {
-                console.error('Error saving assessment:', error);
-                 if(saveStatus) {
-                     saveStatus.textContent = `Error: ${error.message}`;
-                     saveStatus.classList.remove('text-green-600');
-                     saveStatus.classList.add('text-red-600');
-                      // Keep error message displayed until user interacts again
-                 }
-                // Re-enable buttons on error
-                saveButton.disabled = false;
-                saveButton.textContent = 'Save';
-                cancelButton.disabled = false;
+                console.error('Error submitting form:', error);
+                messageArea.textContent = 'Netværksfejl under gem.';
+                messageArea.className = 'message-area text-sm text-red-600 mr-auto';
             }
-        }
+             finally {
+                saveButton.disabled = false;
+             }
+        });
     });
-
-     // --- Event Listeners for Select Dropdown Color Updates ---
-     tableBody?.addEventListener('change', function(event) {
-        if (event.target.tagName === 'SELECT' && event.target.closest('.edit-form')) {
-            updateDropdownColor(event.target);
-        }
-    });
-
-    // --- Event Listeners for Admin Filters ---
-    filterArtistNameInput?.addEventListener('input', applyAdminFilters);
-    filterRiskLevelSelect?.addEventListener('change', applyAdminFilters);
-    resetFiltersButton?.addEventListener('click', () => {
-        filterArtistNameInput.value = '';
-        filterRiskLevelSelect.value = 'all';
-        applyAdminFilters();
-    });
-
-    // --- Initial Setup ---
-    applyAdminFilters(); // Apply filters on initial load
-    scrollToHash(); // Attempt to scroll to hash after initial setup
 });
 </script>
 {% endblock %} 

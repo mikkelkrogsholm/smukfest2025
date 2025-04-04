@@ -79,10 +79,12 @@
                         <div class="pt-2 border-t border-gray-300">
                             <h4 class="text-sm font-medium text-gray-700 mb-1">Optædener:</h4>
                             <ul class="text-xs text-gray-600 list-disc list-inside space-y-1">
+                                <!-- DEBUG: Processing artist slug: {{ artist.slug }} -->
                                 {% set artist_events = events | selectattr("artist_slug", "eq", artist.slug) | list %}
+                                <!-- DEBUG: Found {{ artist_events | length }} events for {{ artist.slug }} -->
                                 {% if artist_events %}
                                     {% for event in artist_events %}
-                                        <li>{{ event.start_time | datetimeformat }} @ {{ event.stage.name if event.stage else 'TBA' }}</li>
+                                        <li>{{ event.start_time | datetimeformat('%A %H:%M, %d/%m-%Y') }} @ {{ event.stage.name if event.stage else 'TBA' }}</li>
                                     {% endfor %}
                                 {% else %}
                                     <li class="text-gray-400 italic">Ingen planlagt endnu.</li>
@@ -151,10 +153,7 @@
                         data-stage="{{ event.stage.name | default('TBA', true) if event.stage else 'TBA' }}"
                         data-risk="{{ assessments.get(event.artist_slug).risk_level if assessments.get(event.artist_slug) else 'none' }}">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ event.start_time | datetimeformat }}
-                            {% if event.end_time %}
-                                - {{ event.end_time | datetimeformat('%H:%M') }}
-                            {% endif %}
+                            {{ event.start_time | datetimeformat('%A, %d/%m-%Y %H:%M') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">

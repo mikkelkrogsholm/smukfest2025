@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ artist.title }} - Details{% endblock %}
+{% block title %}{{ artist.title }} - Detaljer{% endblock %}
 
 {% block content %}
 {# Define background class based on risk level #}
@@ -25,7 +25,7 @@
                 <img src="{{ artist.image_url }}" alt="Image of {{ artist.title }}" class="w-full h-auto object-cover rounded-lg shadow-md aspect-square">
             {% else %}
                 <div class="w-full h-full bg-gray-300 flex items-center justify-center text-gray-500 rounded-lg shadow-md aspect-square">
-                    <span>No Image</span>
+                    <span>Intet Billede</span>
                 </div>
             {% endif %}
         </div>
@@ -35,21 +35,21 @@
             <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">{{ artist.title }}</h1>
             <p class="text-sm text-gray-500 mb-4">Slug: {{ artist.slug }}</p>
             
-            <h3 class="text-md font-semibold text-gray-600 mb-2">Risk Overview:</h3>
+            <h3 class="text-md font-semibold text-gray-600 mb-2">Risiko Oversigt:</h3>
             {% if assessment %}
                 <div class="flex flex-wrap gap-2 mb-4">
                     <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium {% if assessment.risk_level == 'high' %}bg-red-100 text-red-800{% elif assessment.risk_level == 'medium' %}bg-yellow-100 text-yellow-800{% elif assessment.risk_level == 'low' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
-                        Risk: {{ assessment.risk_level | capitalize if assessment.risk_level else 'N/A' }}
+                        Risiko: {{ assessment.risk_level | capitalize if assessment.risk_level else 'N/A' }}
                     </span>
                     <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium {% if assessment.intensity_level == 'high' %}bg-red-100 text-red-800{% elif assessment.intensity_level == 'medium' %}bg-yellow-100 text-yellow-800{% elif assessment.intensity_level == 'low' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
-                        Intensity: {{ assessment.intensity_level | capitalize if assessment.intensity_level else 'N/A' }}
+                        Intensitet: {{ assessment.intensity_level | capitalize if assessment.intensity_level else 'N/A' }}
                     </span>
                     <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium {% if assessment.density_level == 'high' %}bg-red-100 text-red-800{% elif assessment.density_level == 'medium' %}bg-yellow-100 text-yellow-800{% elif assessment.density_level == 'low' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
-                        Density: {{ assessment.density_level | capitalize if assessment.density_level else 'N/A' }}
+                        Tæthed: {{ assessment.density_level | capitalize if assessment.density_level else 'N/A' }}
                     </span>
                 </div>
             {% else %}
-                <p class="text-sm text-gray-500 italic mb-4">No risk assessment available.</p>
+                <p class="text-sm text-gray-500 italic mb-4">Ingen risikovurdering tilgængelig.</p>
             {% endif %}
         </div>
     </div>
@@ -58,30 +58,27 @@
     <div class="p-6 md:p-8">
         <!-- Performances -->
         <div class="mb-8">
-            <h2 class="text-xl font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">Performances</h2>
+            <h2 class="text-xl font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">Optædener</h2>
             {% if events %}
                 <ul class="space-y-2">
                     {% for event in events %}
                         <li class="text-sm text-gray-800 bg-gray-50 p-2 rounded">
-                            <span class="font-medium">{{ event.start_time | datetimeformat }}</span> @ <span class="font-medium">{{ event.stage.name if event.stage else 'TBA' }}</span>
-                            {% if event.end_time %}
-                                <span class="text-gray-500 text-xs">(ends {{ event.end_time | datetimeformat('%H:%M') }})</span>
-                            {% endif %}
+                            <span class="font-medium">{{ event.start_time | datetimeformat('%A %H:%M, %d/%m-%Y') }}</span> @ <span class="font-medium">{{ event.stage.name if event.stage else 'TBA' }}</span>
                         </li>
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-sm text-gray-500 italic">No scheduled performances found.</p>
+                <p class="text-sm text-gray-500 italic">Ingen planlagte optædener fundet.</p>
             {% endif %}
         </div>
 
         <!-- Risk Assessment Details -->
         <div>
-            <h2 class="text-xl font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">Risk Assessment Details</h2>
+            <h2 class="text-xl font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">Risikovurderingsdetaljer</h2>
             {% if assessment %}
                 <dl class="space-y-3 text-sm">
                     <div>
-                        <dt class="font-medium text-gray-500">Remarks</dt>
+                        <dt class="font-medium text-gray-500">Bemærkninger</dt>
                         <dd class="mt-1 text-gray-800 whitespace-pre-wrap bg-gray-50 p-2 rounded">
                             {% if assessment.remarks %}
                                 {{ assessment.remarks }}
@@ -91,7 +88,7 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="font-medium text-gray-500">Crowd Profile</dt>
+                        <dt class="font-medium text-gray-500">Publikumsprofil</dt>
                         <dd class="mt-1 text-gray-800 whitespace-pre-wrap bg-gray-50 p-2 rounded">
                             {% if assessment.crowd_profile %}
                                 {{ assessment.crowd_profile }}
@@ -101,7 +98,7 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="font-medium text-gray-500">Internal Notes</dt>
+                        <dt class="font-medium text-gray-500">Interne Noter</dt>
                         <dd class="mt-1 text-gray-800 whitespace-pre-wrap bg-gray-50 p-2 rounded">
                             {% if assessment.notes %}
                                 {{ assessment.notes }}
@@ -111,18 +108,18 @@
                         </dd>
                     </div>
                      <div>
-                        <dt class="font-medium text-gray-500">Last Updated</dt>
+                        <dt class="font-medium text-gray-500">Sidst Opdateret</dt>
                         <dd class="mt-1 text-gray-800 bg-gray-50 p-2 rounded" title="{{ assessment.updated_at | datetimeformat('%Y-%m-%d %H:%M:%S') if assessment.updated_at else '' }}">
-                            {{ assessment.updated_at | datetimeformat if assessment.updated_at else 'Never' }}
+                            {{ assessment.updated_at | datetimeformat if assessment.updated_at else 'Aldrig' }}
                         </dd>
                     </div>
                 </dl>
             {% else %}
                 <div class="bg-blue-50 border-l-4 border-blue-400 text-blue-700 p-4 rounded-md text-sm" role="alert">
-                    <p class="font-bold">No Risk Assessment Found</p>
-                    <p>There is currently no risk assessment data available for this artist.</p>
+                    <p class="font-bold">Ingen Risikovurdering Fundet</p>
+                    <p>Der er ingen risikovurderingsdata tilgængelig for denne kunstner.</p>
                     {% if current_user_role == 'admin' %}
-                    <p class="mt-2">You can add one from the <a href="{{ url_for('read_assessments_page') }}" class="font-medium underline hover:text-blue-800">Risk Assessments</a> page.</p>
+                    <p class="mt-2">Du kan tilføje en fra <a href="{{ url_for('read_assessments_page') }}" class="font-medium underline hover:text-blue-800">Risikovurderinger</a> siden.</p>
                     {% endif %}
                 </div>
             {% endif %}
@@ -132,12 +129,12 @@
         <div class="mt-8 pt-6 border-t border-gray-200 flex justify-start gap-3">
             <a href="{{ url_for('read_root') }}" 
                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                &larr; Back to Dashboard
+                &larr; Tilbage til Overblik
             </a>
             {% if assessment and current_user_role == 'admin' %}
             <a href="{{ url_for('read_assessments_page') }}#artist-{{ artist.slug }}" 
                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Edit Assessment
+                Rediger Vurdering
             </a>
             {% endif %}
         </div>

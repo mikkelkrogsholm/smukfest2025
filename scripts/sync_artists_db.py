@@ -333,32 +333,30 @@ def sync_database(db_filename: str, parsed_data: Dict[str, Any]):
                 stage_id = None
                 stage_name = event.get('stage_name')
 
-                if stage_name:
-                    try:
-                        # 1. Ensure stage exists in 'stages' table
-                        cursor.execute("INSERT OR IGNORE INTO stages (name) VALUES (?)", (stage_name,))
-                        
-                        # 2. Get the stage_id
-                        cursor.execute("SELECT id FROM stages WHERE name = ?", (stage_name,))
-                        result = cursor.fetchone()
-                        if result:
-                            stage_id = result[0]
-                        else:
-                             print(f"Error: Failed to retrieve stage_id for stage '{stage_name}' after INSERT OR IGNORE.")
-                             error_events += 1
-                             continue # Skip this event if stage lookup fails
-                    except sqlite3.Error as e:
-                         print(f"Database error handling stage '{stage_name}' for event '{event.get('artist_slug', 'N/A')}': {e}")
+                # == MODIFICATION START: Assign default stage if missing ==
+                if not stage_name:
+                    print(f"Info: Event for artist '{event.get('artist_slug')}' has no stage name from API. Using default 'TBA'.")
+                    stage_name = "TBA" # Assign default stage name
+                # == MODIFICATION END ==
+
+                # Now, stage_name will always have a value (either from API or default)
+                try:
+                    # 1. Ensure stage exists in 'stages' table
+                    cursor.execute("INSERT OR IGNORE INTO stages (name) VALUES (?)", (stage_name,))
+                    
+                    # 2. Get the stage_id
+                    cursor.execute("SELECT id FROM stages WHERE name = ?", (stage_name,))
+                    result = cursor.fetchone()
+                    if result:
+                        stage_id = result[0]
+                    else:
+                         print(f"Error: Failed to retrieve stage_id for stage '{stage_name}' after INSERT OR IGNORE.")
                          error_events += 1
-                         continue # Skip this event
-                else:
-                    # Handle events with no stage? Options:
-                    # a) Skip the event
-                    # b) Create a default 'Unknown' stage and use its ID
-                    # c) Allow NULL stage_id if the schema permits (currently NOT NULL)
-                    print(f"Warning: Event for artist '{event.get('artist_slug')}' has no stage name. Skipping event insertion.")
-                    error_events += 1
-                    continue # Skip events without a stage
+                         continue # Skip this event if stage lookup fails
+                except sqlite3.Error as e:
+                     print(f"Database error handling stage '{stage_name}' for event '{event.get('artist_slug', 'N/A')}': {e}")
+                     error_events += 1
+                     continue # Skip this event
                 
                 # 3. Insert event with stage_id
                 if stage_id: # Only insert if we have a valid stage_id
