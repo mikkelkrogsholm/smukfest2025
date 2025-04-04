@@ -52,50 +52,51 @@
                 {% set risk_color_class = 'bg-green-100' %}
             {% endif %}
 
-            <div class="artist-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full" 
-                 data-slug="{{ artist.slug }}"
-                 data-dates='{{ events | selectattr("artist_slug", "eq", artist.slug) | map(attribute="start_time") | map('datetimeformat', '%Y-%m-%d') | unique | list | tojson }}'
-                 data-stages='{{ events | selectattr("artist_slug", "eq", artist.slug) | map(attribute="stage") | map(attribute="name") | reject("none") | unique | list | tojson }}'
-                 data-risk="{{ artist_assessment.risk_level if artist_assessment else 'none' }}">
-                {% if artist.image_url %}
-                    <img src="{{ artist.image_url }}" alt="Image of {{ artist.title }}" class="w-full h-48 object-cover">
-                {% else %}
-                    <div class="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-500">
-                        No Image
-                    </div>
-                {% endif %}
-                <div class="p-4 flex-grow flex flex-col {{ risk_color_class }}">
-                    <div class="mb-2">
-                        <h3 class="text-lg font-bold mb-1">
-                            <a href="{{ url_for('read_artist_detail', artist_slug=artist.slug) }}" title="View details for {{ artist.title }}">
-                                {{ artist.title }}
-                            </a>
-                        </h3>
-                        <p class="text-sm text-gray-600 mb-1">
-                            Nationality: <span class="font-medium">{{ artist.nationality if artist.nationality else 'N/A' }}</span>
-                        </p>
-                        <p class="text-xs text-gray-400 truncate" title="{{ artist.slug }}">Slug: {{ artist.slug }}</p>
-                    </div>
-                    <div class="pt-2 border-t border-gray-300">
-                        <h4 class="text-sm font-medium text-gray-700 mb-1">Performances:</h4>
-                        <ul class="text-xs text-gray-600 list-disc list-inside space-y-1">
-                            {% set artist_events = events | selectattr("artist_slug", "eq", artist.slug) | list %}
-                            {% if artist_events %}
-                                {% for event in artist_events %}
-                                    <li>{{ event.start_time | datetimeformat }} @ {{ event.stage.name if event.stage else 'TBA' }}</li>
-                                {% endfor %}
-                            {% else %}
-                                <li class="text-gray-400 italic">No schedule found yet.</li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                    {% if artist_assessment %}
-                    <div class="mt-2 pt-2 border-t border-gray-300 text-xs text-gray-500">
-                        Risk: <span class="font-medium">{{ artist_assessment.risk_level | capitalize }}</span> | 
-                        Intensity: <span class="font-medium">{{ artist_assessment.intensity_level | capitalize }}</span> | 
-                        Density: <span class="font-medium">{{ artist_assessment.density_level | capitalize }}</span>
-                    </div>
+            <a href="{{ url_for('read_artist_detail', artist_slug=artist.slug) }}" 
+               class="artist-card block rounded-lg shadow-md overflow-hidden hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-shadow duration-300 flex flex-col h-full" 
+               data-slug="{{ artist.slug }}"
+               data-dates='{{ events | selectattr("artist_slug", "eq", artist.slug) | map(attribute="start_time") | map('datetimeformat', '%Y-%m-%d') | unique | list | tojson }}'
+               data-stages='{{ events | selectattr("artist_slug", "eq", artist.slug) | map(attribute="stage") | map(attribute="name") | reject("none") | unique | list | tojson }}'
+               data-risk="{{ artist_assessment.risk_level if artist_assessment else 'none' }}">
+                <div class="flex flex-col h-full">
+                    {% if artist.image_url %}
+                        <img src="{{ artist.image_url }}" alt="Image of {{ artist.title }}" class="w-full h-48 object-cover">
+                    {% else %}
+                        <div class="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-500">
+                            No Image
+                        </div>
                     {% endif %}
+                    <div class="p-4 flex-grow flex flex-col {{ risk_color_class }}">
+                        <div class="mb-2">
+                            <h3 class="text-lg font-bold mb-1">
+                                {{ artist.title }}
+                            </h3>
+                            <p class="text-sm text-gray-600 mb-1">
+                                Nationality: <span class="font-medium">{{ artist.nationality if artist.nationality else 'N/A' }}</span>
+                            </p>
+                            <p class="text-xs text-gray-400 truncate" title="{{ artist.slug }}">Slug: {{ artist.slug }}</p>
+                        </div>
+                        <div class="pt-2 border-t border-gray-300">
+                            <h4 class="text-sm font-medium text-gray-700 mb-1">Performances:</h4>
+                            <ul class="text-xs text-gray-600 list-disc list-inside space-y-1">
+                                {% set artist_events = events | selectattr("artist_slug", "eq", artist.slug) | list %}
+                                {% if artist_events %}
+                                    {% for event in artist_events %}
+                                        <li>{{ event.start_time | datetimeformat }} @ {{ event.stage.name if event.stage else 'TBA' }}</li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li class="text-gray-400 italic">No schedule found yet.</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        {% if artist_assessment %}
+                        <div class="mt-2 pt-2 border-t border-gray-300 text-xs text-gray-500">
+                            Risk: <span class="font-medium">{{ artist_assessment.risk_level | capitalize }}</span> | 
+                            Intensity: <span class="font-medium">{{ artist_assessment.intensity_level | capitalize }}</span> | 
+                            Density: <span class="font-medium">{{ artist_assessment.density_level | capitalize }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="bg-gray-50 mt-auto pt-1 pb-1 border-t border-gray-200 px-4">
                     <p class="text-xs text-gray-500" title="{{ artist.updated_at }}">
@@ -107,7 +108,7 @@
                     </p>
                     {% endif %}
                 </div>
-            </div>
+            </a>
         {% endfor %}
     </div>
 {% else %}

@@ -67,7 +67,7 @@ def get_artist_detail_by_slug(db: Session, artist_slug: str) -> Optional[models.
             joinedload(models.Artist.events).joinedload(models.Event.stage) 
         )
         .filter(models.Artist.slug == artist_slug)
-    ).scalar_one_or_none()
+    ).unique().scalar_one_or_none()
 
 # --- Event CRUD --- 
 

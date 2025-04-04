@@ -217,7 +217,8 @@ def read_root(
             "artists": all_artists, # Pass artists directly for filtering/card generation
             "events": events, # Pass events directly for table/filtering
             "assessments": assessments, # Pass assessments dict keyed by slug
-            "current_user_role": current_user.role.value # Pass role value
+            "current_user_role": current_user.role.value, # Pass role value
+            "current_user": current_user.username # ADDED: Pass username for base template
         }
     )
 
