@@ -1,43 +1,43 @@
 {% extends "base.html" %}
 
-{% block title %}Artist Overview{% endblock %}
+{% block title %}Overblik - Kunstnere{% endblock %}
 
 {% block content %}
 
 {# --- Filter Section --- #}
 <div class="mb-8 p-4 bg-gray-100 rounded-lg shadow">
-    <h3 class="text-lg font-semibold mb-3">Filter Schedule & Artists</h3>
+    <h3 class="text-lg font-semibold mb-3">Filtrer Tidsplan & Kunstnere</h3>
     <form id="filter-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-            <label for="filter-date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <label for="filter-date" class="block text-sm font-medium text-gray-700 mb-1">Dato</label>
             <select id="filter-date" name="filter_date" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                <option value="all">All Dates</option>
+                <option value="all">Alle Datoer</option>
             </select>
         </div>
         <div>
-            <label for="filter-stage" class="block text-sm font-medium text-gray-700 mb-1">Stage</label>
+            <label for="filter-stage" class="block text-sm font-medium text-gray-700 mb-1">Scene</label>
             <select id="filter-stage" name="filter_stage" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                <option value="all">All Stages</option>
+                <option value="all">Alle Scener</option>
             </select>
         </div>
         <div>
-            <label for="filter-risk" class="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
+            <label for="filter-risk" class="block text-sm font-medium text-gray-700 mb-1">Risikoniveau</label>
             <select id="filter-risk" name="filter_risk" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                <option value="all">All Risks</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="none">Not Set</option>
+                <option value="all">Alle Niveauer</option>
+                <option value="low">Lav</option>
+                <option value="medium">Mellem</option>
+                <option value="high">Høj</option>
+                <option value="none">Ikke sat</option>
             </select>
         </div>
         <div class="flex items-end">
-            <button type="button" id="reset-filters" class="mt-1 w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Reset</button>
+            <button type="button" id="reset-filters" class="mt-1 w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Nulstil</button>
         </div>
     </form>
 </div>
 {# --- End Filter Section --- #}
 
-<h2 class="text-2xl font-semibold mb-6">Artist Lineup</h2>
+<h2 class="text-2xl font-semibold mb-6">Kunstner Lineup</h2>
 
 {% if artists %}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="artist-grid">
@@ -63,7 +63,7 @@
                         <img src="{{ artist.image_url }}" alt="Image of {{ artist.title }}" class="w-full h-48 object-cover">
                     {% else %}
                         <div class="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-500">
-                            No Image
+                            Intet billede
                         </div>
                     {% endif %}
                     <div class="p-4 flex-grow flex flex-col {{ risk_color_class }}">
@@ -72,12 +72,12 @@
                                 {{ artist.title }}
                             </h3>
                             <p class="text-sm text-gray-600 mb-1">
-                                Nationality: <span class="font-medium">{{ artist.nationality if artist.nationality else 'N/A' }}</span>
+                                Nationalitet: <span class="font-medium">{{ artist.nationality if artist.nationality else 'N/A' }}</span>
                             </p>
                             <p class="text-xs text-gray-400 truncate" title="{{ artist.slug }}">Slug: {{ artist.slug }}</p>
                         </div>
                         <div class="pt-2 border-t border-gray-300">
-                            <h4 class="text-sm font-medium text-gray-700 mb-1">Performances:</h4>
+                            <h4 class="text-sm font-medium text-gray-700 mb-1">Optædener:</h4>
                             <ul class="text-xs text-gray-600 list-disc list-inside space-y-1">
                                 {% set artist_events = events | selectattr("artist_slug", "eq", artist.slug) | list %}
                                 {% if artist_events %}
@@ -85,26 +85,26 @@
                                         <li>{{ event.start_time | datetimeformat }} @ {{ event.stage.name if event.stage else 'TBA' }}</li>
                                     {% endfor %}
                                 {% else %}
-                                    <li class="text-gray-400 italic">No schedule found yet.</li>
+                                    <li class="text-gray-400 italic">Ingen planlagt endnu.</li>
                                 {% endif %}
                             </ul>
                         </div>
                         {% if artist_assessment %}
                         <div class="mt-2 pt-2 border-t border-gray-300 text-xs text-gray-500">
-                            Risk: <span class="font-medium">{{ artist_assessment.risk_level | capitalize }}</span> | 
-                            Intensity: <span class="font-medium">{{ artist_assessment.intensity_level | capitalize }}</span> | 
-                            Density: <span class="font-medium">{{ artist_assessment.density_level | capitalize }}</span>
+                            Risiko: <span class="font-medium">{{ artist_assessment.risk_level | capitalize }}</span> | 
+                            Intensitet: <span class="font-medium">{{ artist_assessment.intensity_level | capitalize }}</span> | 
+                            Tæthed: <span class="font-medium">{{ artist_assessment.density_level | capitalize }}</span>
                         </div>
                         {% endif %}
                     </div>
                 </div>
                 <div class="bg-gray-50 mt-auto pt-1 pb-1 border-t border-gray-200 px-4">
                     <p class="text-xs text-gray-500" title="{{ artist.updated_at }}">
-                        Artist Updated: {{ artist.updated_at | datetimeformat if artist.updated_at else 'N/A' }}
+                        Kunstner Opdateret: {{ artist.updated_at | datetimeformat if artist.updated_at else 'N/A' }}
                     </p>
                     {% if artist_assessment and artist_assessment.updated_at %}
                     <p class="text-xs text-gray-400" title="{{ artist_assessment.updated_at | datetimeformat('%Y-%m-%d %H:%M:%S') }}">
-                        Assessment Updated: {{ artist_assessment.updated_at | datetimeformat }}
+                        Vurdering Opdateret: {{ artist_assessment.updated_at | datetimeformat }}
                     </p>
                     {% endif %}
                 </div>
@@ -113,13 +113,13 @@
     </div>
 {% else %}
     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
-        <p class="font-bold">No Artists Found</p>
-        <p>The database is currently empty or the data could not be fetched. Please try running the sync script:</p>
+        <p class="font-bold">Ingen Kunstnere Fundet</p>
+        <p>Databasen er tom, eller data kunne ikke hentes. Prøv at køre synkroniseringsscriptet:</p>
         <code class="block bg-gray-200 text-black p-2 rounded mt-2 text-sm">python scripts/sync_artists_db.py</code>
     </div>
 {% endif %}
 
-<h2 class="text-2xl font-semibold mb-6 mt-12">Full Schedule Table</h2>
+<h2 class="text-2xl font-semibold mb-6 mt-12">Fuld Tidsplan</h2>
 
 {% if events %}
     <div class="bg-white rounded-lg shadow-md overflow-hidden" id="schedule-table-container">
@@ -127,9 +127,9 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artist</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tid</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kunstner</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scene</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200" id="schedule-table-body">
@@ -161,11 +161,11 @@
                                 {% if event.artist and event.artist.image_url %}
                                     <img class="h-10 w-10 rounded-full object-cover" src="{{ event.artist.image_url }}" alt="{{ event.artist.title }}">
                                 {% else %}
-                                    <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">No Img</div>
+                                    <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">Intet Billede</div>
                                 {% endif %}
                                 <div class="ml-4">
                                     <div class="text-sm font-medium text-gray-900 hover:text-indigo-600">
-                                        <a href="{{ url_for('read_artist_detail', artist_slug=event.artist_slug) }}" title="View details for {{ event.artist.title if event.artist else event.artist_slug }}">
+                                        <a href="{{ url_for('read_artist_detail', artist_slug=event.artist_slug) }}" title="Se detaljer for {{ event.artist.title if event.artist else event.artist_slug }}">
                                             {{ event.artist.title if event.artist else event.artist_slug }}
                                         </a>
                                     </div>
@@ -183,8 +183,8 @@
     </div>
 {% else %}
     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
-        <p class="font-bold">No Schedule Found</p>
-        <p>The schedule is currently empty or could not be fetched. Please try running the sync script:</p>
+        <p class="font-bold">Ingen Tidsplan Fundet</p>
+        <p>Tidsplanen er tom eller kunne ikke hentes. Prøv at køre synkroniseringsscriptet:</p>
         <code class="block bg-gray-200 text-black p-2 rounded mt-2 text-sm">python scripts/sync_artists_db.py</code>
     </div>
 {% endif %}
@@ -193,70 +193,73 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Use |safe filter and rename variable to avoid conflicts
-    // Add fallback to ensure eventData is always an array
-    const eventData = {{ events | tojson | safe }} || [];
+    // Get DOM elements
     const filterDateSelect = document.getElementById('filter-date');
     const filterStageSelect = document.getElementById('filter-stage');
     const filterRiskSelect = document.getElementById('filter-risk');
     const scheduleTableBody = document.getElementById('schedule-table-body');
     const artistGrid = document.getElementById('artist-grid');
     const allScheduleRows = scheduleTableBody ? Array.from(scheduleTableBody.querySelectorAll('tr.schedule-row')) : [];
-    const allArtistCards = artistGrid ? Array.from(artistGrid.querySelectorAll('div.artist-card')) : [];
+    const allArtistCards = artistGrid ? Array.from(artistGrid.querySelectorAll('a.artist-card')) : [];
     const resetFiltersButton = document.getElementById('reset-filters');
 
-    function formatDate(isoString) {
-        if (!isoString) return null;
+    console.log(`[Filter Init] Found ${allScheduleRows.length} schedule rows.`);
+    console.log(`[Filter Init] Found ${allArtistCards.length} artist cards.`);
+
+    // --- Populate Dropdowns ---
+    function populateDropdowns() {
+        // Dates (from table rows)
         try {
-            // Basic ISO date extraction (YYYY-MM-DD)
-            return isoString.substring(0, 10);
+            const datesFromTable = allScheduleRows.map(row => row.dataset.date).filter(d => d);
+            const uniqueDates = [...new Set(datesFromTable)].sort();
+            console.log('[Filter Populate] Unique Dates:', uniqueDates);
+            // Clear existing options except 'All'
+            filterDateSelect.innerHTML = '<option value="all">Alle Datoer</option>'; 
+            uniqueDates.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date;
+                try {
+                    const dt = new Date(date + 'T00:00:00'); // Ensure parsing as local date
+                    option.textContent = dt.toLocaleDateString('da-DK', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }); // Use Danish locale
+                } catch (e) {
+                    option.textContent = date; // Fallback
+                }
+                filterDateSelect.appendChild(option);
+            });
         } catch (e) {
-            return null;
+             console.error("[Filter Populate] Error populating dates:", e);
         }
+
+        // Stages (from table rows)
+        try {
+            const stagesFromTable = allScheduleRows.map(row => row.dataset.stage).filter(s => s && s !== 'TBA');
+            const uniqueStages = [...new Set(stagesFromTable)].sort();
+            console.log('[Filter Populate] Unique Stages:', uniqueStages);
+             // Clear existing options except 'All'
+            filterStageSelect.innerHTML = '<option value="all">Alle Scener</option>';
+            uniqueStages.forEach(stage => {
+                const option = document.createElement('option');
+                option.value = stage;
+                option.textContent = stage;
+                filterStageSelect.appendChild(option);
+            });
+        } catch(e) {
+             console.error("[Filter Populate] Error populating stages:", e);
+        }
+        
+        // Risk (static options - already in HTML, no need to populate dynamically)
     }
 
-    function formatStage(stageName) {
-        return stageName ? stageName : 'TBA';
-    }
-
-    // --- Populate Filter Dropdowns --- 
-    // Use eventData here
-    const uniqueDates = [...new Set(eventData.map(e => formatDate(e.start_time)).filter(d => d).sort())];
-    {# Refine stage name extraction and filtering #}
-    const uniqueStages = [...new Set(
-        eventData.map(e => e.stage ? e.stage.name : null) // Extract name or null
-                 .map(formatStage)                       // Format stage name (handles null)
-                 .filter(s => s && s !== 'TBA')         // Filter out null/empty/TBA
-                 .sort()                                 // Sort
-    )];
-
-    uniqueDates.forEach(date => {
-        const option = document.createElement('option');
-        option.value = date;
-        // Display formatted date for user
-        try {
-            const dt = new Date(date + 'T00:00:00'); // Ensure parsing as local date
-            option.textContent = dt.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-        } catch (e) {
-            option.textContent = date; // Fallback
-        }
-        filterDateSelect.appendChild(option);
-    });
-
-    uniqueStages.forEach(stage => {
-        const option = document.createElement('option');
-        option.value = stage;
-        option.textContent = stage;
-        filterStageSelect.appendChild(option);
-    });
-
-    // --- Apply Filters --- 
+    // --- Apply Filters ---
     function applyFilters() {
         const selectedDate = filterDateSelect.value;
         const selectedStage = filterStageSelect.value;
         const selectedRisk = filterRiskSelect.value;
 
+        console.log(`[Filter Apply] Filtering with: Date='${selectedDate}', Stage='${selectedStage}', Risk='${selectedRisk}'`);
+
         // Filter Schedule Table
+        let visibleRows = 0;
         allScheduleRows.forEach(row => {
             const rowDate = row.dataset.date;
             const rowStage = row.dataset.stage;
@@ -264,62 +267,64 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const dateMatch = selectedDate === 'all' || rowDate === selectedDate;
             const stageMatch = selectedStage === 'all' || rowStage === selectedStage;
-            row.style.display = (dateMatch && stageMatch) ? '' : 'none';
+            const riskMatch = selectedRisk === 'all' || rowRisk === selectedRisk;
+
+            const shouldShow = dateMatch && stageMatch && riskMatch;
+            row.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) visibleRows++;
         });
+        console.log(`[Filter Apply] Visible schedule rows: ${visibleRows}`);
+
 
         // Filter Artist Grid
+        let visibleCards = 0;
         allArtistCards.forEach(card => {
-            const artistSlug = card.dataset.slug;
-            const artistDates = JSON.parse(card.dataset.dates || '[]');
-            const artistStages = JSON.parse(card.dataset.stages || '[]');
+            let artistDates = [];
+            let artistStages = [];
             const artistRisk = card.dataset.risk;
 
-            // Filter logic needs to account for possibly multiple dates/stages per artist
-            let hasMatchingEvent = false;
-            const relevantEvents = eventData.filter(event => event.artist_slug === artistSlug); // Get events for *this* artist
-            
-            if (selectedDate === 'all' && selectedStage === 'all') {
-                hasMatchingEvent = true; // Show card if no date/stage filter applied
-            } else {
-                // Check if *any* of the artist's events match the current filters
-                hasMatchingEvent = relevantEvents.some(event => {
-                     const eventDate = formatDate(event.start_time);
-                     const eventStage = formatStage(event.stage ? event.stage.name : null);
-                     const eventDateMatch = selectedDate === 'all' || eventDate === selectedDate;
-                     const eventStageMatch = selectedStage === 'all' || eventStage === selectedStage;
-                     return eventDateMatch && eventStageMatch; // Event must match both selected date and stage (if not 'all')
-                });
-            }
+            try { artistDates = JSON.parse(card.dataset.dates || '[]'); } catch (e) { console.error(`Error parsing data-dates for card ${card.dataset.slug}:`, card.dataset.dates, e); }
+            try { artistStages = JSON.parse(card.dataset.stages || '[]'); } catch (e) { console.error(`Error parsing data-stages for card ${card.dataset.slug}:`, card.dataset.stages, e); }
 
-            // Check if artist risk matches the risk filter
+            const dateMatch = selectedDate === 'all' || artistDates.includes(selectedDate);
+            const stageMatch = selectedStage === 'all' || artistStages.includes(selectedStage);
             const riskMatch = selectedRisk === 'all' || artistRisk === selectedRisk;
 
-            card.style.display = (hasMatchingEvent && riskMatch) ? '' : 'none'; // Show/hide based on combined match
+            const shouldShow = dateMatch && stageMatch && riskMatch;
+            card.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) visibleCards++;
         });
+        console.log(`[Filter Apply] Visible artist cards: ${visibleCards}`);
     }
 
-    // --- Reset Filters --- 
+    // --- Reset Filters ---
     function resetFilters() {
+        console.log("[Filter Reset] Resetting filters.");
         filterDateSelect.value = 'all';
         filterStageSelect.value = 'all';
         filterRiskSelect.value = 'all';
-        applyFilters(); // Re-apply to show all
+        applyFilters();
     }
-    // --- End Reset Filters ---
 
-    // --- Event Listeners --- 
+    // --- Initial Setup & Event Listeners ---
+    if (!scheduleTableBody || !artistGrid) {
+         console.warn("[Filter Init] Schedule table body or artist grid not found. Filters might not work correctly.");
+         // Potentially hide filter section or show message
+         return; // Stop if essential elements are missing
+    }
+
+    populateDropdowns(); // Populate dropdowns first
+    applyFilters();      // Apply default filters on load
+
     filterDateSelect.addEventListener('change', applyFilters);
     filterStageSelect.addEventListener('change', applyFilters);
     filterRiskSelect.addEventListener('change', applyFilters);
-    if (resetFiltersButton) { // Check if button exists
+    if (resetFiltersButton) {
         resetFiltersButton.addEventListener('click', resetFilters);
+    } else {
+        console.warn("[Filter Init] Reset button not found.");
     }
-    // --- End Event Listeners ---
-    
-    // Initial filter application on load
-    applyFilters(); 
-
-}); // End DOMContentLoaded
+});
 </script>
 {% endblock %}
 

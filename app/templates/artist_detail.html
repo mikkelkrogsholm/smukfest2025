@@ -1,64 +1,144 @@
 {% extends "base.html" %}
 
-{% block title %}Artist Details: {{ artist.title }}{% endblock %}
+{% block title %}{{ artist.title }} - Details{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="bg-white shadow-md rounded-lg p-6 mb-8">
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2 md:mb-0">{{ artist.title }}</h1>
-            <!-- Optional: Add back button or breadcrumbs here -->
-             <a href="/" class="text-blue-600 hover:text-blue-800 transition duration-150 ease-in-out">&larr; Back to Overview</a>
-        </div>
-        <hr class="mb-4">
+{# Define background class based on risk level #}
+{% set hero_bg_class = 'bg-gradient-to-r from-gray-50 to-gray-100' %} {# Default #}
+{% if assessment %}
+    {% if assessment.risk_level == 'high' %}
+        {% set hero_bg_class = 'bg-red-50' %}
+    {% elif assessment.risk_level == 'medium' %}
+        {% set hero_bg_class = 'bg-yellow-50' %}
+    {% elif assessment.risk_level == 'low' %}
+        {% set hero_bg_class = 'bg-green-50' %}
+    {% endif %}
+{% endif %}
 
-        <!-- Artist Details Section -->
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold text-gray-700 mb-3">Artist Information</h2>
-            <p class="text-gray-600"><strong>Genre:</strong> {{ artist.genre if artist.genre else 'N/A' }}</p>
-            <p class="text-gray-600"><strong>Origin:</strong> {{ artist.origin if artist.origin else 'N/A' }}</p>
-            <!-- Add more artist details if available in your model -->
-        </div>
-
-        <!-- Risk Assessment Section -->
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold text-gray-700 mb-3">Risk Assessment</h2>
-            {% if assessment %}
-                <div class="space-y-2 text-gray-600">
-                    <p><strong>Risk Level:</strong> <span class="font-medium {% if assessment.risk_level == 'High' %}text-red-600{% elif assessment.risk_level == 'Medium' %}text-yellow-600{% else %}text-green-600{% endif %}">{{ assessment.risk_level }}</span></p>
-                    <p><strong>Reasoning:</strong> {{ assessment.reasoning if assessment.reasoning else 'No specific reasoning provided.' }}</p>
-                    <p><strong>Mitigation Strategies:</strong> {{ assessment.mitigation_strategies if assessment.mitigation_strategies else 'No specific mitigation strategies provided.' }}</p>
-                    <p><strong>Last Updated:</strong> {{ assessment.last_updated | datetimeformat if assessment.last_updated else 'N/A' }}</p>
-                    {% if current_user_role == 'admin' %}
-                        <p><a href="/admin/assessments#{{ artist.slug }}" class="text-sm text-blue-500 hover:underline">Edit Assessment (Admin)</a></p>
-                    {% endif %}
-                </div>
+<div class="bg-white shadow-xl rounded-lg overflow-hidden">
+    
+    <!-- Hero Section -->
+    <div class="md:flex p-6 md:p-8 {{ hero_bg_class }} border-b border-gray-200">
+        <!-- Image -->
+        <div class="md:w-1/4 flex-shrink-0 mb-4 md:mb-0 md:mr-8">
+            {% if artist.image_url %}
+                <img src="{{ artist.image_url }}" alt="Image of {{ artist.title }}" class="w-full h-auto object-cover rounded-lg shadow-md aspect-square">
             {% else %}
-                <p class="text-gray-500 italic">No risk assessment available for this artist.</p>
-                 {% if current_user_role == 'admin' %}
-                     <p><a href="/admin/assessments#{{ artist.slug }}" class="text-sm text-blue-500 hover:underline">Add Assessment (Admin)</a></p>
-                 {% endif %}
+                <div class="w-full h-full bg-gray-300 flex items-center justify-center text-gray-500 rounded-lg shadow-md aspect-square">
+                    <span>No Image</span>
+                </div>
             {% endif %}
         </div>
+        
+        <!-- Artist Info & Key Risk -->
+        <div class="flex-grow">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">{{ artist.title }}</h1>
+            <p class="text-sm text-gray-500 mb-4">Slug: {{ artist.slug }}</p>
+            
+            <h3 class="text-md font-semibold text-gray-600 mb-2">Risk Overview:</h3>
+            {% if assessment %}
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium {% if assessment.risk_level == 'high' %}bg-red-100 text-red-800{% elif assessment.risk_level == 'medium' %}bg-yellow-100 text-yellow-800{% elif assessment.risk_level == 'low' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        Risk: {{ assessment.risk_level | capitalize if assessment.risk_level else 'N/A' }}
+                    </span>
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium {% if assessment.intensity_level == 'high' %}bg-red-100 text-red-800{% elif assessment.intensity_level == 'medium' %}bg-yellow-100 text-yellow-800{% elif assessment.intensity_level == 'low' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        Intensity: {{ assessment.intensity_level | capitalize if assessment.intensity_level else 'N/A' }}
+                    </span>
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium {% if assessment.density_level == 'high' %}bg-red-100 text-red-800{% elif assessment.density_level == 'medium' %}bg-yellow-100 text-yellow-800{% elif assessment.density_level == 'low' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        Density: {{ assessment.density_level | capitalize if assessment.density_level else 'N/A' }}
+                    </span>
+                </div>
+            {% else %}
+                <p class="text-sm text-gray-500 italic mb-4">No risk assessment available.</p>
+            {% endif %}
+        </div>
+    </div>
 
-        <!-- Events Section -->
-        <div>
-            <h2 class="text-xl font-semibold text-gray-700 mb-3">Scheduled Events</h2>
+    <!-- Details Sections -->
+    <div class="p-6 md:p-8">
+        <!-- Performances -->
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">Performances</h2>
             {% if events %}
-                <ul class="list-disc list-inside space-y-2 pl-4">
+                <ul class="space-y-2">
                     {% for event in events %}
-                        <li class="text-gray-700">
-                            <span class="font-semibold">{{ event.stage.name if event.stage else 'Unknown Stage' }}</span>:
-                            {{ event.start_time | datetimeformat('%a, %d %b %H:%M') }} - {{ event.end_time | datetimeformat('%H:%M') }}
-                            ({{ (event.end_time - event.start_time).total_seconds() / 60 }} min)
-                            <!-- Add link to event details if you have such a page -->
+                        <li class="text-sm text-gray-800 bg-gray-50 p-2 rounded">
+                            <span class="font-medium">{{ event.start_time | datetimeformat }}</span> @ <span class="font-medium">{{ event.stage.name if event.stage else 'TBA' }}</span>
+                            {% if event.end_time %}
+                                <span class="text-gray-500 text-xs">(ends {{ event.end_time | datetimeformat('%H:%M') }})</span>
+                            {% endif %}
                         </li>
-                    {% else %}
-                        <p class="text-gray-500 italic">No scheduled events found for this artist.</p>
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-gray-500 italic">No scheduled events found for this artist.</p>
+                <p class="text-sm text-gray-500 italic">No scheduled performances found.</p>
+            {% endif %}
+        </div>
+
+        <!-- Risk Assessment Details -->
+        <div>
+            <h2 class="text-xl font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">Risk Assessment Details</h2>
+            {% if assessment %}
+                <dl class="space-y-3 text-sm">
+                    <div>
+                        <dt class="font-medium text-gray-500">Remarks</dt>
+                        <dd class="mt-1 text-gray-800 whitespace-pre-wrap bg-gray-50 p-2 rounded">
+                            {% if assessment.remarks %}
+                                {{ assessment.remarks }}
+                            {% else %}
+                                <span class="text-gray-400 italic">N/A</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500">Crowd Profile</dt>
+                        <dd class="mt-1 text-gray-800 whitespace-pre-wrap bg-gray-50 p-2 rounded">
+                            {% if assessment.crowd_profile %}
+                                {{ assessment.crowd_profile }}
+                            {% else %}
+                                <span class="text-gray-400 italic">N/A</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500">Internal Notes</dt>
+                        <dd class="mt-1 text-gray-800 whitespace-pre-wrap bg-gray-50 p-2 rounded">
+                            {% if assessment.notes %}
+                                {{ assessment.notes }}
+                            {% else %}
+                                <span class="text-gray-400 italic">N/A</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                     <div>
+                        <dt class="font-medium text-gray-500">Last Updated</dt>
+                        <dd class="mt-1 text-gray-800 bg-gray-50 p-2 rounded" title="{{ assessment.updated_at | datetimeformat('%Y-%m-%d %H:%M:%S') if assessment.updated_at else '' }}">
+                            {{ assessment.updated_at | datetimeformat if assessment.updated_at else 'Never' }}
+                        </dd>
+                    </div>
+                </dl>
+            {% else %}
+                <div class="bg-blue-50 border-l-4 border-blue-400 text-blue-700 p-4 rounded-md text-sm" role="alert">
+                    <p class="font-bold">No Risk Assessment Found</p>
+                    <p>There is currently no risk assessment data available for this artist.</p>
+                    {% if current_user_role == 'admin' %}
+                    <p class="mt-2">You can add one from the <a href="{{ url_for('read_assessments_page') }}" class="font-medium underline hover:text-blue-800">Risk Assessments</a> page.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="mt-8 pt-6 border-t border-gray-200 flex justify-start gap-3">
+            <a href="{{ url_for('read_root') }}" 
+               class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                &larr; Back to Dashboard
+            </a>
+            {% if assessment and current_user_role == 'admin' %}
+            <a href="{{ url_for('read_assessments_page') }}#artist-{{ artist.slug }}" 
+               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Edit Assessment
+            </a>
             {% endif %}
         </div>
     </div>

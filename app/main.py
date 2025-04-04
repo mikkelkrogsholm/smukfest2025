@@ -326,7 +326,8 @@ def read_artist_detail(
             "artist": artist_detail, # Pass the ORM object with loaded relations
             "assessment": artist_detail.assessment, # Access loaded assessment
             "events": artist_events, # Pass sorted loaded events
-            "current_user_role": current_user.role.value # Use .value for enum
+            "current_user_role": current_user.role.value, # Use .value for enum
+            "current_user": current_user.username # ADDED: Pass username for base template
         }
     )
 
