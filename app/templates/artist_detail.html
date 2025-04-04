@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Artist Details: {{ artist.title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2 md:mb-0">{{ artist.title }}</h1>
+            <!-- Optional: Add back button or breadcrumbs here -->
+             <a href="/" class="text-blue-600 hover:text-blue-800 transition duration-150 ease-in-out">&larr; Back to Overview</a>
+        </div>
+        <hr class="mb-4">
+
+        <!-- Artist Details Section -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Artist Information</h2>
+            <p class="text-gray-600"><strong>Genre:</strong> {{ artist.genre if artist.genre else 'N/A' }}</p>
+            <p class="text-gray-600"><strong>Origin:</strong> {{ artist.origin if artist.origin else 'N/A' }}</p>
+            <!-- Add more artist details if available in your model -->
+        </div>
+
+        <!-- Risk Assessment Section -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Risk Assessment</h2>
+            {% if assessment %}
+                <div class="space-y-2 text-gray-600">
+                    <p><strong>Risk Level:</strong> <span class="font-medium {% if assessment.risk_level == 'High' %}text-red-600{% elif assessment.risk_level == 'Medium' %}text-yellow-600{% else %}text-green-600{% endif %}">{{ assessment.risk_level }}</span></p>
+                    <p><strong>Reasoning:</strong> {{ assessment.reasoning if assessment.reasoning else 'No specific reasoning provided.' }}</p>
+                    <p><strong>Mitigation Strategies:</strong> {{ assessment.mitigation_strategies if assessment.mitigation_strategies else 'No specific mitigation strategies provided.' }}</p>
+                    <p><strong>Last Updated:</strong> {{ assessment.last_updated | datetimeformat if assessment.last_updated else 'N/A' }}</p>
+                    {% if current_user_role == 'admin' %}
+                        <p><a href="/admin/assessments#{{ artist.slug }}" class="text-sm text-blue-500 hover:underline">Edit Assessment (Admin)</a></p>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 italic">No risk assessment available for this artist.</p>
+                 {% if current_user_role == 'admin' %}
+                     <p><a href="/admin/assessments#{{ artist.slug }}" class="text-sm text-blue-500 hover:underline">Add Assessment (Admin)</a></p>
+                 {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Events Section -->
+        <div>
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Scheduled Events</h2>
+            {% if events %}
+                <ul class="list-disc list-inside space-y-2 pl-4">
+                    {% for event in events %}
+                        <li class="text-gray-700">
+                            <span class="font-semibold">{{ event.stage.name if event.stage else 'Unknown Stage' }}</span>:
+                            {{ event.start_time | datetimeformat('%a, %d %b %H:%M') }} - {{ event.end_time | datetimeformat('%H:%M') }}
+                            ({{ (event.end_time - event.start_time).total_seconds() / 60 }} min)
+                            <!-- Add link to event details if you have such a page -->
+                        </li>
+                    {% else %}
+                        <p class="text-gray-500 italic">No scheduled events found for this artist.</p>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-gray-500 italic">No scheduled events found for this artist.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

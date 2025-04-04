@@ -1,0 +1,29 @@
+# Virtual environment
+smukfest2025/
+venv/
+*.venv
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Git files
+.git/
+.gitignore
+
+# IDE folders
+.vscode/
+.idea/
+
+# Secrets / Local config
+.env
+
+# Local database file (we will mount this as a volume)
+# *.db
+# *.db-journal
+
+# Other temp/OS files
+.DS_Store
+*.log 

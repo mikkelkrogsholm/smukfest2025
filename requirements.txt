@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+requests
+# Add python-dateutil for parsing ISO date strings
+python-dateutil
+jinja2
+SQLAlchemy>=2.0.0,<3.0.0
+# Add auth dependencies
+passlib[bcrypt]
+python-jose[cryptography]
+# Add form data parsing dependency
+python-multipart 
