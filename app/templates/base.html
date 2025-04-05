@@ -6,7 +6,17 @@
     <title>{% block title %}Smukfest Risikoværktøj{% endblock %}</title>
     <!-- Include Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    
+    {# Favicons - Generated using realfavicongenerator.net or similar #}
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='favicons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='favicons/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='favicons/favicon-16x16.png') }}">
+    {# <link rel="manifest" href="{{ url_for('static', path='favicons/site.webmanifest') }}"> #} {# Uncomment if you have a manifest #}
+    <link rel="shortcut icon" href="{{ url_for('static', path='favicons/favicon.ico') }}">
+    {# <meta name="msapplication-TileColor" content="#da532c"> #} {# Uncomment and set color if needed #}
+    {# <meta name="msapplication-config" content="{{ url_for('static', path='favicons/browserconfig.xml') }}"> #} {# Uncomment if you have browserconfig.xml #}
+    {# <meta name="theme-color" content="#ffffff"> #} {# Uncomment and set color if needed #}
+
     <style type="text/tailwindcss">
         /* Add custom base styles or components here if needed */
         /* For example: */

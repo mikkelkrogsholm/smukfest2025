@@ -1,11 +1,11 @@
 # Smukfest 2025 Risikoværktøj
 
-Dette projekt indeholder en webapplikation bygget med FastAPI til at vise kunstner- og tidsplaninformation for Smukfest 2025, samt til at administrere interne risikovurderinger for kunstnerne. Applikationen henter data fra Smukfests API, gemmer det i en lokal SQLite-database og bruger Docker Compose til udviklingsmiljøet.
+Dette projekt indeholder en webapplikation bygget med FastAPI til at vise kunstner- og tidsplaninformation for Smukfest 2025, samt til at administrere interne risikovurderinger for kunstnerne. Applikationen henter data fra Smukfests API, gemmer det i en lokal SQLite-database (`./data/database.db`) og bruger Docker Compose til udviklingsmiljøet.
 
 ## Features
 
-*   **API Data Sync:** Henter automatisk kunstner- og tidsplandata fra Smukfests API ved opstart af containeren via `scripts/sync_artists_db.py`.
-*   **Database:** Bruger SQLite (`smukfest_artists.db`) og SQLAlchemy ORM til at gemme data om kunstnere, scener, events, brugere og risikovurderinger. Databasen gemmes vedvarende vha. Docker Volumes (eller Bind Mount, afhængig af `docker-compose.yml` konfiguration).
+*   **API Data Sync:** Henter kunstner- og tidsplandata fra Smukfests API via `scripts/sync_artists_db.py` (køres under `setup.sh`).
+*   **Database:** Bruger SQLite (`./data/database.db`) og SQLAlchemy ORM til at gemme data om kunstnere, scener, events, brugere og risikovurderinger. Databasen gemmes vedvarende på host-maskinen via et Docker Bind Mount.
 *   **Web Interface (FastAPI & Jinja2):**
     *   Viser et overblik over kunstnere og tidsplan.
     *   Filtrering af kunstnere/tidsplan (dato, scene, risikoniveau).
@@ -15,11 +15,11 @@ Dette projekt indeholder en webapplikation bygget med FastAPI til at vise kunstn
     *   Brugerstyring i databasen (Admin/User roller).
     *   Sikker password hashing (bcrypt).
     *   JWT-baseret autentificering via HTTP-only cookies.
-    *   Automatisk oprettelse af standardbrugere (`admin`/`skovtrold`, `smuk`/`storcigar`) ved opstart via `scripts/seed_users.py`.
+    *   Oprettelse af standardbrugere (`admin`/`skovtrold`, `smuk`/`storcigar`) via `scripts/seed_users.py` (køres under `setup.sh`).
 *   **Udviklingsmiljø (Docker Compose):**
     *   Nem opsætning af containermiljø.
-    *   Automatisk database-synkronisering og bruger-seeding ved opstart.
-    *   Hot-reloading af kodeændringer i `app/` og `scripts/`.
+    *   Dedikeret setup-script (`setup.sh`) til initial database-oprettelse, seeding og synkronisering.
+    *   Hot-reloading af kodeændringer i `app/` og `scripts/` når applikationen kører via `docker compose up`.
 
 ## Opsætning og Kørsel (Docker Compose - Anbefalet)
 
@@ -46,37 +46,31 @@ Dette projekt indeholder en webapplikation bygget med FastAPI til at vise kunstn
         # Evt. andre variable...
         ```
 
-4.  **(Valgfrit - Hvis Bind Mount bruges for DB):** Hvis `docker-compose.yml` bruger et bind mount for databasen (`- ./smukfest_artists.db:/app/smukfest_artists.db`), opret da en tom databasefil lokalt før første start:
+4.  **Kør Setup Script (Første gang):**
+    Gør scriptet eksekverbart og kør det. Dette script vil:
+    *   Oprette `./data` mappen og den tomme databasefil (`./data/database.db`).
+    *   Bygge Docker imaget.
+    *   Køre en midlertidig container for at initialisere databasetabellerne, oprette standardbrugere og synkronisere kunstner/event data fra API'en.
+    *   Starte alle services (`traefik`, `smukrisiko`) i baggrunden.
+
     ```bash
-    touch smukfest_artists.db
-    # Juster evt. rettigheder, hvis containeren ikke kan skrive til filen:
-    # chmod 666 smukfest_artists.db
+    chmod +x setup.sh
+    ./setup.sh
     ```
-    *(Bemærk: Bruger du et named volume (anbefales), er dette trin ikke nødvendigt).*
+    *Følg outputtet for eventuelle fejl under processen.*
 
-5.  **Byg og Start Containeren:**
-    ```bash
-    docker compose up --build
-    ```
-    *   Dette bygger Docker-imaget baseret på `Dockerfile` og starter `web`-servicen defineret i `docker-compose.yml`.
-    *   Ved første start (og efterfølgende starter) vil `CMD`-instruktionen i `Dockerfile` automatisk køre `sync_artists_db.py` og `seed_users.py` før `uvicorn` starter. Se output i terminalen.
-    *   Brug `-d` flaget (`docker compose up --build -d`) for at køre i baggrunden (detached mode).
+5.  **Tilgå Applikationen:** Åbn din browser og gå til den adresse, Traefik er konfigureret til (f.eks. `http://localhost` eller `https://risiko.smukfest.dk` afhængigt af din opsætning og DNS).
 
-6.  **Tilgå Applikationen:** Åbn din browser og gå til `http://127.0.0.1:8000`.
-
-7.  **Login:** Brug en af standardbrugerne:
+6.  **Login:** Brug en af standardbrugerne:
     *   `admin` / `skovtrold` (Admin rolle)
     *   `smuk` / `storcigar` (User rolle)
 
-8.  **Hot Reloading:** Ændringer i `./app` eller `./scripts` genstarter automatisk `uvicorn`-serveren inde i containeren.
+7.  **Efterfølgende Start/Stop:**
+    *   For at starte applikationen igen (uden at køre setup): `docker compose up -d`
+    *   For at stoppe applikationen: `docker compose down`
+    *   Databasen i `./data/database.db` vil blive bevaret mellem start/stop.
 
-9.  **Stop:**
-    *   Hvis kørende i forgrunden: Tryk `Ctrl+C`.
-    *   Kør derefter (eller hvis kørende i baggrunden):
-        ```bash
-        docker compose down
-        ```
-        *(Bruger du named volume, slettes databasen ikke her. Bruger du bind mount, bevares filen lokalt).*
+8.  **Hot Reloading:** Ændringer i `./app` eller `./scripts` genstarter automatisk `uvicorn`-serveren inde i containeren, når den kører via `docker compose up`.
 
 ## Projektstruktur
 
@@ -98,9 +92,11 @@ Smukfest2025/
 │   ├── models.py        # SQLAlchemy ORM modeller
 │   ├── schemas.py       # Pydantic schemas (validering, serialisering)
 │   └── utils.py         # Hjælpefunktioner (f.eks. datoformatering)
+├── data/                # Mappe til persistente data (oprettes af setup.sh)
+│   └── database.db      # SQLite database fil
 ├── scripts/             # Hjælpescripts
-│   ├── seed_users.py    # Opretter standardbrugere i DB
-│   └── sync_artists_db.py # Henter API data og synkroniserer kunstnere/events/scener til DB
+│   ├── seed_users.py    # Opretter standardbrugere
+│   └── sync_artists_db.py # Synkroniserer med Smukfest API
 ├── .env                 # Miljøvariabler (SECRET!, config) - BØR IKKE COMMITTES!
 ├── .gitignore           # Filer/mapper ignoreret af Git
 ├── Dockerfile           # Instruktioner til at bygge Docker image (inkl. locale & startup CMD)
@@ -108,7 +104,7 @@ Smukfest2025/
 ├── docker-compose.yml   # Docker Compose konfiguration (service, volumes, ports)
 ├── README.md            # Denne fil
 ├── requirements.txt     # Python dependencies
-└── smukfest_artists.db  # SQLite database fil (oprettes/bruges via volume/bind mount)
+└── setup.sh             # Initialiseringsscript
 ```
 
 ## Database Struktur (SQLAlchemy Modeller)
@@ -131,9 +127,10 @@ Selvom Docker anbefales, kan du køre lokalt:
 4.  **Installer Dependencies:** `pip install --upgrade pip`, `pip install -r requirements.txt`.
 5.  **Konfigurer `.env`:** Opret `.env` og sæt `SECRET_KEY` som beskrevet i Docker-sektionen.
 6.  **Initialiser Database:**
-    *   Kør `python -c "from app.database import create_db_tables; create_db_tables()"` for at oprette tabellerne i en lokal `smukfest_artists.db`.
-    *   Kør `python scripts/sync_artists_db.py` for at hente data.
-    *   Kør `python scripts/seed_users.py` for at oprette standardbrugere.
+    *   Opret mappen: `mkdir -p data`
+    *   Kør `python -c "import os; from app.database import create_db_tables, DATABASE_URL; print(f'Using DB: {DATABASE_URL}'); create_db_tables()"` for at oprette tabellerne i `./data/database.db`.
+    *   Sæt environment variable og kør sync: `export DATABASE_URL='sqlite:///./data/database.db'; python scripts/sync_artists_db.py`
+    *   Kør seeding: `python scripts/seed_users.py` (Denne skal muligvis også opdateres til at bruge DATABASE_URL hvis den køres uden for docker).
 7.  **Kør Server:** `uvicorn app.main:app --reload`.
 8.  **Tilgå:** `http://127.0.0.1:8000`.
 
