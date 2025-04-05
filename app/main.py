@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import datetime, timezone, timedelta
+import locale # Import locale module
 
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -33,6 +34,16 @@ from app.users import User # Specifically import the User model for type hinting
 from app.utils import format_datetime, datetime_now # Import utils
 from app.database import SessionLocal, engine, create_db_tables # Import engine and table creation function
 
+# --- Set Locale for Danish Weekday Names ---
+try:
+    # Sæt locale specifikt for tidsformatering til dansk
+    locale.setlocale(locale.LC_TIME, 'da_DK.UTF-8')
+    print("Locale for LC_TIME set to da_DK.UTF-8") # Til debugging
+except locale.Error as e:
+    print(f"Warning: Could not set locale to da_DK.UTF-8: {e}")
+    # Overvej fallback eller yderligere fejlhåndtering her
+# --- End Locale Setting ---
+
 # Determine the base directory of the app
 # This assumes main.py is in the app directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -41,7 +52,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Uncomment the line below if you want tables to be created automatically
 # when the application starts, based on your models.py definitions.
 # Be cautious using this in production if you manage migrations separately.
-create_db_tables()
+# create_db_tables() # Commented out - Initialization moved to setup script
 
 app = FastAPI(title="Smukfest Risk Tool")
 

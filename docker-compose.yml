@@ -30,7 +30,7 @@ services:
     container_name: smukrisiko
     restart: always
     volumes:
-      - smukfest_db_data:/app
+      - ./data:/app/data
       - ./app:/app/app
       - ./scripts:/app/scripts
     env_file:
@@ -43,5 +43,4 @@ services:
       - "traefik.http.services.smukrisiko.loadbalancer.server.port=8000"
 
 volumes:
-  smukfest_db_data:
   letsencrypt:

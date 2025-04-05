@@ -5,11 +5,27 @@ import sys
 import os
 from typing import List, Dict, Any, Tuple, Optional, Set
 from datetime import datetime # Add datetime for timestamps
+from urllib.parse import urlparse # Import urlparse to handle the DATABASE_URL
 
 # --- Constants ---
 API_URL = "https://www.smukfest.dk/api/content?path=%2Fprogram"
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_FILE = os.path.join(PROJECT_ROOT, "smukfest_artists.db")
+# PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# DB_FILE = os.path.join(PROJECT_ROOT, "smukfest_artists.db") # Removed hardcoded path
+
+# --- Get Database Path from Environment Variable ---
+DEFAULT_DB_PATH = "/app/data/database.db" # Default path inside container
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
+
+# Extract the path part from the URL (e.g., "sqlite:///app/data/database.db" -> "/app/data/database.db")
+parsed_url = urlparse(DATABASE_URL)
+if parsed_url.scheme == "sqlite":
+    # The path includes the leading '/' after the scheme, so we remove 'sqlite:///'
+    DB_PATH = DATABASE_URL.replace('sqlite:///', '/', 1) 
+else:
+    print(f"Warning: Unexpected DATABASE_URL scheme '{parsed_url.scheme}'. Using default path: {DEFAULT_DB_PATH}")
+    DB_PATH = DEFAULT_DB_PATH
+
+print(f"Using database path: {DB_PATH}") # Add log to confirm path
 
 # --- API Fetching & Parsing ---
 def fetch_and_parse_api_data(url: str) -> Optional[Dict[str, Any]]:
@@ -408,8 +424,8 @@ def main():
         print("Failed to fetch or parse API data. Exiting sync process.")
         sys.exit(1)
 
-    # 2. Synchronize the database
-    sync_database(DB_FILE, parsed_data)
+    # 2. Synchronize the database using the path derived from DATABASE_URL
+    sync_database(DB_PATH, parsed_data)
 
 if __name__ == "__main__":
     print("Starting Smukfest Artist & Schedule DB Sync...")

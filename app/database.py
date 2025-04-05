@@ -3,10 +3,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .models import Base # Import the Base from models
 
-# Determine the base directory of the project (one level up from app/)
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_FILE_NAME = "smukfest_artists.db"
-DATABASE_URL = f"sqlite:///{os.path.join(PROJECT_ROOT, DB_FILE_NAME)}"
+# Read database URL from environment variable, default to mounted path
+# The default path corresponds to the volume mount in docker-compose.yml
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////app/data/database.db")
 
 # SQLAlchemy engine
 # connect_args={"check_same_thread": False} is needed only for SQLite.

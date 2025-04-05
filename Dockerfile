@@ -28,8 +28,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 # Copy the rest of the application code into the container at /app
-# COPY ./app /app/app # Comment out for dev volume mount
-# COPY ./scripts /app/scripts # Comment out for dev volume mount
+# COPY ./app /app/       # Commented out - Rely on volume mounts for dev/setup
+# COPY ./scripts /app/scripts/ # Commented out - Rely on volume mounts for dev/setup
 
 # Make port 8000 available to the world outside this container
 EXPOSE 8000
@@ -38,6 +38,4 @@ EXPOSE 8000
 # ENV NAME=World
 
 # Run sync, seed, then uvicorn when the container launches
-CMD python scripts/sync_artists_db.py && \
-    python scripts/seed_users.py && \
-    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
