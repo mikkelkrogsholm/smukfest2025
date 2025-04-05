@@ -12,7 +12,7 @@ APP_IMAGE_NAME="${PROJECT_DIR_NAME}-${APP_SERVICE_NAME}"
 # Database file path relative to project root
 DB_DIR="./data"
 DB_FILE="${DB_DIR}/database.db"
-CONTAINER_DB_PATH="/app/data/database.db"
+# CONTAINER_DB_PATH="/app/data/database.db" # Path inside container if needed
 
 # --- Setup Steps ---
 
@@ -22,35 +22,31 @@ mkdir -p "${DB_DIR}"
 echo "--- Ensuring empty database file exists (${DB_FILE}) ---"
 # Create the file if it doesn't exist
 touch "${DB_FILE}"
-# Optional: Ensure permissions allow the container user to write. 
-# This might be needed depending on the user inside the container.
-# chmod 666 "${DB_FILE}"
+# Optional: Ensure permissions allow the container user to write.
+chmod 666 "${DB_FILE}"
 
 echo "--- Building Docker image (if necessary) ---"
 # Build the image defined in docker-compose.yml for the app service
-# This ensures the latest code changes (like in database.py) are included
 docker compose build ${APP_SERVICE_NAME}
 
 echo "--- Running Database Initialization Container ---"
+echo "DEBUG: Using image name: '${APP_IMAGE_NAME}'"
 
 # Run a temporary container to execute setup commands
-# Mount the data volume and pass the database URL environment variable
-# Also mount the app and scripts directories to make code available
 docker run --rm \
-    -v "$(pwd)/${DB_DIR}:/app/data" \
-    -v "$(pwd)/app:/app/app" \
-    -v "$(pwd)/scripts:/app/scripts" \
-    -e DATABASE_URL="sqlite:///${CONTAINER_DB_PATH}" \
+    -v "$(pwd):/workspace" \
+    -w /workspace \
+    -e DATABASE_URL="sqlite:////workspace/data/database.db" \
     --name "${APP_SERVICE_NAME}_setup" \
     "${APP_IMAGE_NAME}" \
-    bash -c "\
-        echo '--- (Inside Container) Applying database migrations ---' && \
-        alembic upgrade head && \
-        echo '--- (Inside Container) Seeding users ---' && \
-        python scripts/seed_users.py && \
-        echo '--- (Inside Container) Syncing artists/events ---' && \
+    bash -c ' \
+        echo "--- (Inside Container) Initializing database (migrations & seeding) ---" && \
+        python scripts/initialize_database.py && \
+        echo "--- (Inside Container) Syncing artists/events ---" && \
         python scripts/sync_artists_db.py \
-    "
+    '
+    # Check exit code of the docker run command
+    # The 'set -e' above should handle this, but explicit checking can be added if needed.
 
 echo "--- Database Initialization Complete ---"
 
@@ -58,4 +54,4 @@ echo "--- Starting application services via Docker Compose ---"
 # Start the main application and other services defined in docker-compose.yml
 docker compose up -d
 
-echo "--- Setup finished. Application should be running. ---" 
+echo "--- Setup finished. Application should be running. ---"

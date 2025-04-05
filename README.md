@@ -46,31 +46,54 @@ Dette projekt indeholder en webapplikation bygget med FastAPI til at vise kunstn
         # Evt. andre variable...
         ```
 
-4.  **Kør Setup Script (Første gang):**
-    Gør scriptet eksekverbart og kør det. Dette script vil:
-    *   Oprette `./data` mappen og den tomme databasefil (`./data/database.db`).
-    *   Bygge Docker imaget.
-    *   Køre en midlertidig container for at initialisere databasetabellerne, oprette standardbrugere og synkronisere kunstner/event data fra API'en.
-    *   Starte alle services (`traefik`, `smukrisiko`) i baggrunden.
+4.  **Kør Setup Script (Kun første gang):**
+    Gør scriptet eksekverbart og kør det. Dette script automatiserer hele den initiale opsætning.
 
     ```bash
     chmod +x setup.sh
     ./setup.sh
     ```
-    *Følg outputtet for eventuelle fejl under processen.*
 
-5.  **Tilgå Applikationen:** Åbn din browser og gå til den adresse, Traefik er konfigureret til (f.eks. `http://localhost` eller `https://risiko.smukfest.dk` afhængigt af din opsætning og DNS).
+    **Hvad scriptet gør:**
+    *   Opretter `./data` mappen og den tomme databasefil (`./data/database.db`) på din host-maskine.
+    *   Bygger Docker imaget (`smukfest2025-smukrisiko`), hvis det ikke allerede findes.
+    *   Starter en **midlertidig container** baseret på dette image for at:
+        *   Køre `python scripts/initialize_database.py`. Dette script:
+            *   Anvender Alembic-migrationer (`alembic upgrade head`) for at oprette/opdatere databasetabellerne inde i containeren (mod `./data/database.db`).
+            *   Seeder standardbrugere (`scripts/seed_users.py`).
+        *   Synkroniserer kunstner/event data fra Smukfest API'en (`scripts/sync_artists_db.py`).
+    *   Starter de permanente services (`traefik`, `smukrisiko`) via `docker compose up -d` i baggrunden.
 
-6.  **Login:** Brug en af standardbrugerne:
+    **Vigtigt:** Følg outputtet fra `./setup.sh` nøje første gang. Hvis det fejler, se afsnit 4.a nedenfor.
+
+5.  **Fejlfinding: Manuel Oprettelse af Første Migration (hvis `setup.sh` fejler med "no such table")**
+    *   Hvis `./setup.sh` fejler under database-initialiseringen (f.eks. med `sqlite3.OperationalError: no such table: users`), skyldes det sandsynligvis, at den første Alembic-migration ikke blev genereret korrekt automatisk. Dette kan ske, hvis modellerne ændres, før den allerførste migration køres.
+    *   **Løsning:** Kør følgende kommando i din terminal (i projektets rodmappe) for manuelt at generere den initiale migrationsfil *inde i en container*:
+        ```bash
+        docker run --rm \\
+            -v "$(pwd):/workspace" \\
+            -w /workspace \\
+            -e DATABASE_URL="sqlite:////workspace/data/database.db" \\
+            --name "smukrisiko_alembic_gen" \\
+            smukfest2025-smukrisiko \\
+            alembic revision --autogenerate -m "Create initial tables"
+        ```
+    *   Dette bør oprette en ny fil i `alembic/versions/`. Verificér, at den indeholder `op.create_table(...)` kald.
+    *   Slet den (potentielt tomme/ufuldstændige) `data/database.db` fil: `rm -f data/database.db`
+    *   Kør `./setup.sh` igen. Den bør nu finde og anvende den manuelt genererede migration korrekt.
+
+6.  **Tilgå Applikationen:** Åbn din browser og gå til den adresse, Traefik er konfigureret til (f.eks. `http://localhost` eller `https://risiko.smukfest.dk` afhængigt af din opsætning og DNS).
+
+7.  **Login:** Brug en af standardbrugerne:
     *   `admin` / `skovtrold` (Admin rolle)
     *   `smuk` / `storcigar` (User rolle)
 
-7.  **Efterfølgende Start/Stop:**
+8.  **Efterfølgende Start/Stop:**
     *   For at starte applikationen igen (uden at køre setup): `docker compose up -d`
     *   For at stoppe applikationen: `docker compose down`
     *   Databasen i `./data/database.db` vil blive bevaret mellem start/stop.
 
-8.  **Hot Reloading:** Ændringer i `./app` eller `./scripts` genstarter automatisk `uvicorn`-serveren inde i containeren, når den kører via `docker compose up`.
+9.  **Hot Reloading:** Ændringer i `./app` eller `./scripts` genstarter automatisk `uvicorn`-serveren inde i `smukrisiko`-containeren, når den kører via `docker compose up`.
 
 ## Projektstruktur
 
