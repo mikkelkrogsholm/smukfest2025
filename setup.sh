@@ -44,8 +44,8 @@ docker run --rm \
     --name "${APP_SERVICE_NAME}_setup" \
     "${APP_IMAGE_NAME}" \
     bash -c "\
-        echo '--- (Inside Container) Creating database tables ---' && \
-        python -c 'from app.database import create_db_tables, engine; from app.models import Base; print(f\"Creating tables for {engine.url}\"); Base.metadata.create_all(bind=engine); print(\"Table creation attempted.\")' && \
+        echo '--- (Inside Container) Applying database migrations ---' && \
+        alembic upgrade head && \
         echo '--- (Inside Container) Seeding users ---' && \
         python scripts/seed_users.py && \
         echo '--- (Inside Container) Syncing artists/events ---' && \

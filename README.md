@@ -76,8 +76,13 @@ Dette projekt indeholder en webapplikation bygget med FastAPI til at vise kunstn
 
 ```
 Smukfest2025/
+├── alembic/             # Alembic migrations mappe
+│   ├── versions/        # Migrations-scripts
+│   ├── env.py           # Alembic environment setup
+│   ├── script.py.mako   # Migrations script template
+│   └── README           # Alembic README
 ├── app/                 # FastAPI applikationskode
-│   ├── static/          # Statiske filer (CSS, JS, billeder - f.eks. logo, favicon)
+│   ├── static/          # Statiske filer (CSS, JS, billeder, favicons)
 │   ├── templates/       # HTML skabeloner (Jinja2)
 │   │   ├── base.html
 │   │   ├── index.html
@@ -101,10 +106,11 @@ Smukfest2025/
 ├── .gitignore           # Filer/mapper ignoreret af Git
 ├── Dockerfile           # Instruktioner til at bygge Docker image (inkl. locale & startup CMD)
 ├── .dockerignore        # Filer/mapper ignoreret af Docker build
+├── alembic.ini          # Alembic konfigurationsfil
 ├── docker-compose.yml   # Docker Compose konfiguration (service, volumes, ports)
 ├── README.md            # Denne fil
 ├── requirements.txt     # Python dependencies
-└── setup.sh             # Initialiseringsscript
+└── setup.sh             # Initialiseringsscript (bruger Alembic)
 ```
 
 ## Database Struktur (SQLAlchemy Modeller)
@@ -128,9 +134,10 @@ Selvom Docker anbefales, kan du køre lokalt:
 5.  **Konfigurer `.env`:** Opret `.env` og sæt `SECRET_KEY` som beskrevet i Docker-sektionen.
 6.  **Initialiser Database:**
     *   Opret mappen: `mkdir -p data`
-    *   Kør `python -c "import os; from app.database import create_db_tables, DATABASE_URL; print(f'Using DB: {DATABASE_URL}'); create_db_tables()"` for at oprette tabellerne i `./data/database.db`.
-    *   Sæt environment variable og kør sync: `export DATABASE_URL='sqlite:///./data/database.db'; python scripts/sync_artists_db.py`
-    *   Kør seeding: `python scripts/seed_users.py` (Denne skal muligvis også opdateres til at bruge DATABASE_URL hvis den køres uden for docker).
+    *   Sæt environment variable for database path: `export DATABASE_URL='sqlite:///./data/database.db'`
+    *   Kør Alembic migrations for at oprette/opdatere tabellerne: `alembic upgrade head`
+    *   Kør sync: `python scripts/sync_artists_db.py` (bruger `DATABASE_URL` fra env)
+    *   Kør seeding: `python scripts/seed_users.py` (bruger `DATABASE_URL` fra env)
 7.  **Kør Server:** `uvicorn app.main:app --reload`.
 8.  **Tilgå:** `http://127.0.0.1:8000`.
 
@@ -138,8 +145,6 @@ Selvom Docker anbefales, kan du køre lokalt:
 
 (See `plan.md` and `todo.md` for more details)
 
-*   Review/Update `scripts/sync_artists_db.py` to use SQLAlchemy ORM.
-*   Implement database migrations (e.g., using Alembic) for schema changes instead of relying solely on `create_all`.
 *   Add more comprehensive tests (unit, integration).
 *   Refine UI/UX (loading indicators, clearer error messages, improved styling).
 *   Add more filtering/sorting options to the UI.

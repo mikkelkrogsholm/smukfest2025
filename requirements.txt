@@ -1,13 +1,18 @@
+# Dependencies
 fastapi
 uvicorn[standard]
 python-dotenv
+sqlalchemy
+psycopg2-binary # Although using SQLite now, keep for potential future PG use?
+python-jose[cryptography]
+passlib[bcrypt]
 requests
+python-multipart # For form data
+jinja2
+python-dateutil # For parsing dates in templates/scripts
+alembic # Added for database migrations
+
 # Add python-dateutil for parsing ISO date strings
 python-dateutil
-jinja2
-SQLAlchemy>=2.0.0,<3.0.0
-# Add auth dependencies
-passlib[bcrypt]
-python-jose[cryptography]
 # Add form data parsing dependency
 python-multipart 
