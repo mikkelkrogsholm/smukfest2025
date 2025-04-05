@@ -192,6 +192,7 @@ def setup_database(db_filename: str) -> Tuple[Optional[sqlite3.Connection], Opti
             title TEXT,
             image_url TEXT,
             nationality TEXT,
+            description TEXT,
             spotify_link TEXT,
             created_at TEXT,
             updated_at TEXT
@@ -225,7 +226,8 @@ def setup_database(db_filename: str) -> Tuple[Optional[sqlite3.Connection], Opti
         # Ensure risk_assessments table exists
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS risk_assessments (
-            artist_slug TEXT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT, -- ADDED: Align with models.py
+            artist_slug TEXT UNIQUE NOT NULL, -- UPDATED: Keep unique, not PK
             risk_level TEXT CHECK(risk_level IN ('low', 'medium', 'high')),
             intensity_level TEXT CHECK(intensity_level IN ('low', 'medium', 'high')),
             density_level TEXT CHECK(density_level IN ('low', 'medium', 'high')),

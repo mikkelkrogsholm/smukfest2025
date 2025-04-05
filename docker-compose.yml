@@ -1,22 +1,47 @@
 version: '3.8' # Specify docker-compose version
 
 services:
-  web:
-    build: . # Build the image from the Dockerfile in the current directory
-    container_name: smukfest-app-compose # Optional: Give the container a specific name
+  traefik:
+    image: traefik:v3.1.0
+    restart: always
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=mikkelkrogsholm@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     ports:
-      - "8000:8000" # Map host port 8000 to container port 8000
+      - "80:80"
+      - "443:443"
     volumes:
-      # 1. Named volume for persistent data in /app (incl. DB)
-      - smukfest_db_data:/app 
-      # 2. Code mounts for hot-reload (overwrites code inside /app)
-      - ./app:/app/app 
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    labels:
+      - "traefik.enable=true"
+
+  smukrisiko:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smukrisiko
+    restart: always
+    volumes:
+      - smukfest_db_data:/app
+      - ./app:/app/app
       - ./scripts:/app/scripts
     env_file:
-      - .env # Load environment variables from the .env file in the project root
-    # The command is taken from the Dockerfile CMD instruction.
-    # You could override it here if needed, e.g.:
-    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
+      - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.smukrisiko.rule=Host(`risiko.smukfest.dk`)"
+      - "traefik.http.routers.smukrisiko.entrypoints=websecure"
+      - "traefik.http.routers.smukrisiko.tls.certresolver=myresolver"
+      - "traefik.http.services.smukrisiko.loadbalancer.server.port=8000"
 
 volumes:
-  smukfest_db_data: 
+  smukfest_db_data:
+  letsencrypt:
