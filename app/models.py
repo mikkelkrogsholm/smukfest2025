@@ -68,7 +68,7 @@ class RiskAssessment(Base):
     __tablename__ = "risk_assessments"
 
     id = Column(Integer, primary_key=True, index=True)
-    artist_slug = Column(String, ForeignKey("artists.slug"), unique=True, nullable=False, index=True)
+    artist_slug = Column(String, ForeignKey("artists.slug", ondelete="CASCADE"), unique=True, nullable=False, index=True)
     risk_level = Column(SQLEnum('low', 'medium', 'high', name="risk_level_enum"), nullable=True)
     intensity_level = Column(SQLEnum('low', 'medium', 'high', name="intensity_level_enum"), nullable=True)
     density_level = Column(SQLEnum('low', 'medium', 'high', name="density_level_enum"), nullable=True)

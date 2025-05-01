@@ -37,5 +37,9 @@ EXPOSE 8000
 # Define environment variables (optional, can also be passed during run)
 # ENV NAME=World
 
-# Run sync, seed, then uvicorn when the container launches
-CMD uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
+# Start command with hot-reloading for development
+# Note: The host 0.0.0.0 makes it accessible from outside the container
+# Use --reload-dir to specify which directories to watch (avoids reload on script changes)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app"]
+# For production, you might remove --reload and use multiple workers:
+# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"] 

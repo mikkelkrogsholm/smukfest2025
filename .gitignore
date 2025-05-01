@@ -153,3 +153,4 @@ smukfest_artists.db-journal # SQLite journal file
 
 # Explicitly ignore the smukfest_artists.db file
 smukfest_artists.db 
+data/database.db.bak-20250501-183045

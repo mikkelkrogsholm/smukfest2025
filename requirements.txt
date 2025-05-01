@@ -15,4 +15,7 @@ alembic # Added for database migrations
 # Add python-dateutil for parsing ISO date strings
 python-dateutil
 # Add form data parsing dependency
-python-multipart 
+python-multipart
+
+# Scheduler
+APScheduler==3.10.4 # Or latest compatible version 

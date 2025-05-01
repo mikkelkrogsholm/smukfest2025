@@ -4,8 +4,9 @@ Dette projekt indeholder en webapplikation bygget med FastAPI til at vise kunstn
 
 ## Features
 
-*   **API Data Sync:** Henter kunstner- og tidsplandata fra Smukfests API via `scripts/sync_artists_db.py` (køres under `setup.sh`).
+*   **Automatisk API Data Sync (Hver Time):** Applikationen synkroniserer automatisk kunstner-, scene- og tidsplandata fra Smukfests API hver time via en baggrundsjob (APScheduler), der kalder `scripts/sync_artists_db.py`. Dette script køres også én gang under den initiale opsætning via `setup.sh`.
 *   **Database:** Bruger SQLite (`./data/database.db`) og SQLAlchemy ORM til at gemme data om kunstnere, scener, events, brugere og risikovurderinger. Databasen gemmes vedvarende på host-maskinen via et Docker Bind Mount.
+    *   **Cascade Delete:** Hvis en kunstner slettes (f.eks. fordi den fjernes fra API'et og `sync_artists_db.py` køres), vil den tilknyttede `RiskAssessment` også automatisk blive slettet (via `ON DELETE CASCADE`).
 *   **Web Interface (FastAPI & Jinja2):**
     *   Viser et overblik over kunstnere og tidsplan.
     *   Filtrering af kunstnere/tidsplan (dato, scene, risikoniveau).
@@ -19,7 +20,7 @@ Dette projekt indeholder en webapplikation bygget med FastAPI til at vise kunstn
 *   **Udviklingsmiljø (Docker Compose):**
     *   Nem opsætning af containermiljø.
     *   Dedikeret setup-script (`setup.sh`) til initial database-oprettelse, seeding og synkronisering.
-    *   Hot-reloading af kodeændringer i `app/` og `scripts/` når applikationen kører via `docker compose up`.
+    *   Hot-reloading af kodeændringer i `app/` mappen genstarter automatisk `uvicorn`-serveren (pga. `--reload --reload-dir app` i `Dockerfile`). Ændringer i `scripts/` trigger ikke automatisk genstart.
 
 ## Opsætning og Kørsel (Docker Compose - Anbefalet)
 
@@ -124,10 +125,11 @@ Smukfest2025/
 │   └── database.db      # SQLite database fil
 ├── scripts/             # Hjælpescripts
 │   ├── seed_users.py    # Opretter standardbrugere
-│   └── sync_artists_db.py # Synkroniserer med Smukfest API
+│   └── sync_artists_db.py # Synkroniserer med Smukfest API (køres automatisk hver time og under setup)
+│   └── restore_assessments.py # (Manuelt script) Gendanner assessments fra en backup DB
 ├── .env                 # Miljøvariabler (SECRET!, config) - BØR IKKE COMMITTES!
 ├── .gitignore           # Filer/mapper ignoreret af Git
-├── Dockerfile           # Instruktioner til at bygge Docker image (inkl. locale & startup CMD)
+├── Dockerfile           # Instruktioner til at bygge Docker image (inkl. locale & startup CMD med --reload-dir)
 ├── .dockerignore        # Filer/mapper ignoreret af Docker build
 ├── alembic.ini          # Alembic konfigurationsfil
 ├── docker-compose.yml   # Docker Compose konfiguration (service, volumes, ports)
@@ -143,7 +145,7 @@ Defineret i `app/models.py`:
 *   **`Artist`:** Basisinfo om kunstner (id, slug, title, nationality, image_url, etc.).
 *   **`Stage`:** Sceneinformation (id, name).
 *   **`Event`:** Tidsplaninfo (event\_id, start\_time, end\_time), linket til `Artist` (via `artist_slug`) og `Stage` (via `stage_id`).
-*   **`RiskAssessment`:** Vurderingsdetaljer (id, artist\_slug, risk\_level, intensity\_level, density\_level, remarks, crowd\_profile, notes, updated\_at), linket one-to-one med `Artist`.
+*   **`RiskAssessment`:** Vurderingsdetaljer (id, artist\_slug, risk\_level, intensity\_level, density\_level, remarks, crowd\_profile, notes, updated\_at), linket one-to-one med `Artist`. **Bemærk:** Har `ondelete="CASCADE"` på `artist_slug`, så vurderingen slettes hvis kunstneren slettes.
 *   **`User`:** Brugerinformation (id, username, email, hashed\_password, role, disabled, created\_at).
 
 ## (Alternativ) Lokal Python Opsætning

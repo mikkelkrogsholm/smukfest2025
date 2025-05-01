@@ -2,6 +2,7 @@ import os
 import sys
 from datetime import datetime, timezone, timedelta
 import locale # Import locale module
+import logging # Add logging import
 
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -33,6 +34,12 @@ from app.auth import ( # Import specific auth functions and dependencies
 from app.users import User # Specifically import the User model for type hinting
 from app.utils import format_datetime, datetime_now # Import utils
 from app.database import SessionLocal, engine, create_db_tables # Import engine and table creation function
+
+# --- Scheduler Imports & Setup ---
+from apscheduler.schedulers.background import BackgroundScheduler
+from scripts.sync_artists_db import run_sync as run_hourly_sync # Rename import to avoid clash if needed
+import atexit # To ensure scheduler shutdown
+# --- End Scheduler Setup ---
 
 # --- Set Locale for Danish Weekday Names ---
 try:
@@ -344,3 +351,60 @@ def read_artist_detail(
 
 # --- Placeholder for API documentation or health check --- 
 # ... (rest of the file) ... 
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# --- Scheduler Definition & Job ---
+scheduler = BackgroundScheduler(daemon=True, timezone="Europe/Copenhagen") # Set timezone
+
+def hourly_sync_job():
+    """Job function to run the hourly sync."""
+    try:
+        logger.info("APScheduler: Starting hourly artist sync job...")
+        run_hourly_sync() # Call the imported sync function
+        logger.info("APScheduler: Hourly artist sync job finished successfully.")
+    except Exception as e:
+        logger.error(f"APScheduler: Error during hourly sync job: {e}", exc_info=True)
+
+# --- FastAPI Event Handlers for Scheduler ---
+@app.on_event("startup")
+async def startup_event():
+    logger.info("FastAPI startup: Initializing scheduler...")
+    try:
+        # Add the job to run every hour
+        scheduler.add_job(
+            hourly_sync_job, 
+            'interval', 
+            hours=1, 
+            id='hourly_artist_sync',
+            replace_existing=True,
+            misfire_grace_time=600 # Allow 10 minutes grace period
+        )
+        scheduler.start()
+        logger.info("APScheduler started and job added.")
+        
+        # Optional: Run the job once immediately on startup
+        # logger.info("Running initial sync on startup...")
+        # hourly_sync_job() 
+        
+    except Exception as e:
+        logger.error(f"Error starting APScheduler: {e}", exc_info=True)
+
+@app.on_event("shutdown")
+def shutdown_event():
+    logger.info("FastAPI shutdown: Shutting down APScheduler...")
+    try:
+        scheduler.shutdown()
+        logger.info("APScheduler shut down successfully.")
+    except Exception as e:
+        logger.error(f"Error shutting down APScheduler: {e}", exc_info=True)
+
+# Alternative using atexit (provides an extra layer of safety for shutdown)
+# def shutdown_scheduler_on_exit():
+#     if scheduler.running:
+#         logger.info("atexit: Shutting down APScheduler...")
+#         scheduler.shutdown()
+# atexit.register(shutdown_scheduler_on_exit)
+# --- End Scheduler Logic --- 

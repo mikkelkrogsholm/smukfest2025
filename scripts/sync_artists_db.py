@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Tuple, Optional, Set
 from datetime import datetime # Add datetime for timestamps
 from urllib.parse import urlparse # Import urlparse to handle the DATABASE_URL
 from dateutil import parser # Import dateutil parser
+import logging # Add logging import
 
 # --- SQLAlchemy Imports ---
 from sqlalchemy.orm import Session # Changed from sessionmaker
@@ -311,45 +312,32 @@ def sync_database(db: Session, parsed_data: Dict[str, Any]):
             print("Bulk insert events finished.")
         print(f"Event insertion complete. Inserted: {len(events_to_insert)}, Skipped: {skipped_events}, Parse Errors: {parse_errors}")
 
-# --- Main Execution ---
-def main():
-    """Main function to fetch data and sync the database using SQLAlchemy."""
-    # 1. Fetch and parse fresh data from API
+# --- Main Execution Logic ---
+
+def run_sync(): # Renamed from main
+    """Fetches data, parses it, and syncs it with the database."""
     parsed_data = fetch_and_parse_api_data(API_URL)
-    if parsed_data is None:
-        print("Failed to fetch or parse API data. Exiting sync process.")
-        sys.exit(1)
 
-    # 2. Ensure database tables exist
-    print("Ensuring database tables exist...")
-    try:
-        Base.metadata.create_all(bind=engine)
-        print("Table check/creation complete.")
-    except Exception as e:
-        print(f"ERROR creating tables: {e}")
-        sys.exit(1) # Exit if table creation fails
+    if parsed_data:
+        try:
+            # Use a session context manager
+            with SessionLocal() as db:
+                sync_database(db, parsed_data)
+                db.commit() # Commit the transaction
+            print("Database sync completed successfully.")
+            logging.info("Database sync completed successfully.")
+        except Exception as e:
+            # Session automatically rolls back on exception with context manager
+            print(f"Error during database sync: {e}")
+            logging.error(f"Error during database sync: {e}", exc_info=True)
+            # Re-raise the exception if needed, or handle appropriately
+            # raise # Uncomment if the caller needs to know about the failure
+    else:
+        print("Database sync skipped due to API fetch/parse errors.")
+        logging.warning("Database sync skipped due to API fetch/parse errors.")
 
-    # 3. Synchronize the database within a session context
-    db: Session = SessionLocal()
-    try:
-        print("Starting database synchronization...")
-        sync_database(db, parsed_data)
-        print("Committing database changes...")
-        db.commit()
-        print("Database changes committed successfully.")
-    except Exception as e:
-        print(f"ERROR during database synchronization: {e}")
-        print("Rolling back database changes...")
-        db.rollback()
-        print("Rollback complete.")
-        # Optionally re-raise the exception or exit
-        # raise e
-        sys.exit(1)
-    finally:
-        print("Closing database session.")
-        db.close()
-
+# Add the main execution block back so the script can be run directly
 if __name__ == "__main__":
-    print("Starting Smukfest Artist & Schedule DB Sync (SQLAlchemy Version)...")
-    main()
-    print("Sync process finished.") 
+    print("Starting manual Smukfest Artist & Schedule DB Sync...")
+    run_sync()
+    print("Manual sync process finished.") 
