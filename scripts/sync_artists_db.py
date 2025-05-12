@@ -22,7 +22,7 @@ from app.database import SessionLocal, engine # Import session factory and engin
 from app.models import Base, Artist, Stage, Event # Import ORM models
 
 # --- Constants ---
-API_URL = "https://www.smukfest.dk/api/content?path=%2Fprogram"
+API_URL = "https://www.smukfest.dk/api/content?path=%2Fspilleplanen&simple=1&uid=mal85540"
 
 # --- Get Database Path from Environment Variable ---
 DEFAULT_DB_PATH = "/app/data/database.db" # Default path inside container
@@ -128,7 +128,12 @@ def fetch_and_parse_api_data(url: str) -> Optional[Dict[str, Any]]:
             location_obj = artist_data.get('location')
             stage_name = None
             if isinstance(location_obj, dict):
-                stage_name = location_obj.get('title') or location_obj.get('name')
+                # Always prefer 'name' for stage name, fallback to 'title' if needed
+                stage_name = location_obj.get('name') or location_obj.get('title')
+                if not stage_name:
+                    print(f"Warning: Event for artist '{slug}' is missing stage name in location object: {location_obj}")
+            else:
+                print(f"Warning: Event for artist '{slug}' has no location object.")
 
             event_info = {
                 # Map API fields to ORM model fields (ensure names match models.Event)
