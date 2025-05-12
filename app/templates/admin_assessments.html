@@ -251,6 +251,24 @@ document.addEventListener('DOMContentLoaded', function() {
              }
         });
     });
+
+    // Artist name/slug filter
+    const artistNameInput = document.getElementById('filter-artist-name');
+    if (artistNameInput) {
+        artistNameInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            // Only filter main artist rows (not edit forms)
+            document.querySelectorAll('tr[id^="artist-"]').forEach(row => {
+                const name = row.querySelector('a')?.textContent.toLowerCase() || '';
+                const slug = row.querySelector('.text-xs.text-gray-500')?.textContent.toLowerCase() || '';
+                if (name.includes(query) || slug.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
 });
 </script>
 {% endblock %} 

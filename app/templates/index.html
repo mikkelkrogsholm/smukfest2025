@@ -39,6 +39,11 @@
 
 <h2 class="text-2xl font-semibold mb-6">Kunstner Lineup</h2>
 
+<!-- Artist Name Filter -->
+<div class="mb-4">
+  <input type="text" id="artist-name-filter" placeholder="Søg efter kunstner/band…" class="w-full md:w-1/2 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+</div>
+
 {% if artists %}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="artist-grid">
         {% for artist in artists %}
@@ -322,6 +327,23 @@ document.addEventListener('DOMContentLoaded', function() {
         resetFiltersButton.addEventListener('click', resetFilters);
     } else {
         console.warn("[Filter Init] Reset button not found.");
+    }
+
+    // Artist name filter
+    const artistNameFilter = document.getElementById('artist-name-filter');
+    if (artistNameFilter && artistGrid) {
+        artistNameFilter.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            const cards = artistGrid.querySelectorAll('.artist-card');
+            cards.forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                if (name.includes(query)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        });
     }
 });
 </script>

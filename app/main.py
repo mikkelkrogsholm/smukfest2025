@@ -1,13 +1,13 @@
 import os
 import sys
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, time
 import locale # Import locale module
 import logging # Add logging import
 
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, Request, Depends, Form, HTTPException, status, Response, Path
+from fastapi import FastAPI, Request, Depends, Form, HTTPException, status, Response, Path, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -408,3 +408,122 @@ def shutdown_event():
 #         scheduler.shutdown()
 # atexit.register(shutdown_scheduler_on_exit)
 # --- End Scheduler Logic --- 
+
+@app.get("/calendar", response_class=HTMLResponse)
+def calendar_view(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user),
+    selected_date: Optional[str] = Query(None, alias="date")
+):
+    """Renders a calendar grid with stages as columns and 15-min increments as rows."""
+    import datetime
+    from collections import defaultdict
+
+    # Determine the date to show
+    if selected_date:
+        try:
+            target_date = datetime.datetime.strptime(selected_date, "%Y-%m-%d")
+        except Exception:
+            target_date = datetime.datetime.now()
+    else:
+        target_date = datetime.datetime.now()
+
+    # Fetch all stages
+    stages = [stage for stage in crud.get_all_stages(db) if stage.name != 'TBA']
+    stage_names = [stage.name for stage in stages]
+
+    # Fetch all events for the selected festival day
+    events = crud.get_events_for_festival_day(db, target_date)
+    # Fetch all risk assessments as a dict keyed by artist_slug
+    assessments = crud.get_all_risk_assessments_dict(db)
+
+    # Generate 15-min time slots for the day (08:00 to 03:00 next day)
+    start_time = datetime.datetime.combine(target_date.date(), time(8, 0))
+    end_time = start_time + timedelta(hours=19)  # 03:00 next day
+
+    # If there are events, trim the time range to first/last event
+    if events:
+        def round_down(dt):
+            return dt - timedelta(minutes=dt.minute % 15, seconds=dt.second, microseconds=dt.microsecond)
+        def round_up(dt):
+            add = (15 - (dt.minute % 15)) % 15
+            if add == 0 and (dt.second > 0 or dt.microsecond > 0):
+                add = 15
+            return (dt + timedelta(minutes=add)).replace(second=0, microsecond=0)
+        first_event_start = min(e.start_time for e in events if e.start_time)
+        last_event_end = max((e.end_time or (e.start_time + timedelta(hours=1))) for e in events if e.start_time)
+        start_time = round_down(first_event_start)
+        end_time = round_up(last_event_end)
+
+    time_slots = []
+    t = start_time
+    while t <= end_time:
+        time_slots.append(t)
+        t += timedelta(minutes=15)
+
+    # Build grid: events_by_stage_and_time[stage][slot] = {event_data, span} or placeholder
+    events_by_stage_and_time = {stage: {} for stage in stage_names}
+    event_id_to_event = {}
+    for event in events:
+        if not event.stage:
+            continue
+        stage = event.stage.name
+        event_id_to_event[event.event_id] = event
+        # Find the slot index for the event's start_time
+        slot_idx = None
+        for idx, slot in enumerate(time_slots):
+            if slot <= event.start_time < slot + timedelta(minutes=15):
+                slot_idx = idx
+                break
+        if slot_idx is None:
+            continue  # Event not in visible range
+        # Set span to 4 (1 hour)
+        span = 4
+        # Mark the main slot
+        events_by_stage_and_time[stage][time_slots[slot_idx]] = {"event_data": event, "span": span}
+        # Mark covered slots
+        for i in range(1, span):
+            if slot_idx + i < len(time_slots):
+                events_by_stage_and_time[stage][time_slots[slot_idx + i]] = {"covered_by_event_id": event.event_id, "is_empty_placeholder": True}
+
+    # Pass all events as JSON for modal
+    from app.schemas import Event as EventSchema
+    import json as _json
+    def event_to_dict(ev):
+        # Look up risk assessment for the artist
+        risk_level = None
+        intensity_level = None
+        density_level = None
+        if ev.artist and ev.artist.slug:
+            assessment = assessments.get(ev.artist.slug)
+            if assessment:
+                risk_level = assessment.risk_level
+                intensity_level = assessment.intensity_level
+                density_level = assessment.density_level
+        return {
+            "event_id": ev.event_id,
+            "artist": {"title": ev.artist.title if ev.artist else None, "slug": ev.artist.slug if ev.artist else None},
+            "stage": {"name": ev.stage.name if ev.stage else None},
+            "start_time": ev.start_time.isoformat() if ev.start_time else None,
+            "end_time": ev.end_time.isoformat() if ev.end_time else None,
+            "risk_level": risk_level,
+            "intensity_level": intensity_level,
+            "density_level": density_level,
+        }
+    all_events_raw = [event_to_dict(ev) for ev in events]
+
+    return templates.TemplateResponse(
+        "calendar_view.html",
+        {
+            "request": request,
+            "stages": stages,
+            "stage_names": stage_names,
+            "time_slots": time_slots,
+            "events_by_stage_and_time": events_by_stage_and_time,
+            "all_events_raw": all_events_raw,
+            "selected_date": target_date.strftime("%Y-%m-%d"),
+            "current_user": current_user.username,
+            "current_user_role": current_user.role.value,
+        }
+    )

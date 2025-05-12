@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, joinedload, contains_eager
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, func
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Import ORM models from models.py
 from . import models
@@ -97,6 +97,20 @@ def create_event(db: Session, event: schemas.EventCreate) -> models.Event:
     db.commit()
     db.refresh(db_event)
     return db_event
+
+def get_events_for_festival_day(db: Session, date: datetime) -> list[models.Event]:
+    """Fetches all events for a 'festivaldag' (06:00 to 05:59 next day)."""
+    start_of_day = date.replace(hour=6, minute=0, second=0, microsecond=0)
+    end_of_day = (start_of_day + timedelta(days=1))
+    return db.execute(
+        select(models.Event)
+        .options(joinedload(models.Event.artist), joinedload(models.Event.stage))
+        .where(
+            models.Event.start_time >= start_of_day,
+            models.Event.start_time < end_of_day
+        )
+        .order_by(models.Event.start_time)
+    ).scalars().all()
 
 # --- Stage CRUD ---
 
