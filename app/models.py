@@ -90,3 +90,18 @@ class User(Base):
     role = Column(SQLEnum(UserRoleEnum, name="user_role_enum"), default=UserRoleEnum.USER, nullable=False)
     disabled = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class Contact(Base):
+    __tablename__ = "contacts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String, nullable=False, index=True)  # ANSL, BØGE STAGE, THE HOOD, etc.
+    role = Column(String, nullable=False, index=True)      # Stage Manager, Security, etc.
+    name = Column(String, nullable=False, index=True)      # Person's name
+    phone = Column(String, nullable=False, index=True)     # Phone number
+    channel = Column(String, nullable=True)                # BLÅ KANAL 10, etc.
+    notes = Column(Text, nullable=True)                    # Extra information
+    sort_order = Column(Integer, default=0, index=True)    # For custom sorting
+    is_active = Column(Boolean, default=True)              # To soft-delete contacts
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

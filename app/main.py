@@ -780,3 +780,88 @@ def calendar_print_view(
             "current_user_role": current_user.role.value,
         }
     )
+
+# --- Contact Routes ---
+
+@app.get("/contacts", response_class=HTMLResponse)
+def contacts_view(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user),
+    search: Optional[str] = Query(None),
+    category: Optional[str] = Query(None)
+):
+    """Display contacts with search and filtering functionality."""
+    contacts = crud.get_all_contacts(db, search=search, category=category)
+    categories = crud.get_contact_categories(db)
+    
+    return templates.TemplateResponse(
+        "contacts.html",
+        {
+            "request": request,
+            "contacts": contacts,
+            "categories": categories,
+            "current_search": search or "",
+            "current_category": category or "",
+            "current_user": current_user.username,
+            "current_user_role": current_user.role.value,
+        }
+    )
+
+@app.get("/admin/contacts", response_class=HTMLResponse, tags=["Admin"])
+def admin_contacts_view(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_admin_user),
+    search: Optional[str] = Query(None),
+    category: Optional[str] = Query(None)
+):
+    """Admin view for managing contacts."""
+    contacts = crud.get_all_contacts(db, search=search, category=category)
+    categories = crud.get_contact_categories(db)
+    
+    return templates.TemplateResponse(
+        "admin_contacts.html",
+        {
+            "request": request,
+            "contacts": contacts,
+            "categories": categories,
+            "current_search": search or "",
+            "current_category": category or "",
+            "current_user": admin_user.username,
+            "current_user_role": admin_user.role.value,
+        }
+    )
+
+@app.post("/api/contacts", response_model=schemas.Contact, tags=["Admin API"])
+def create_contact_api(
+    contact: schemas.ContactCreate,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_admin_user)
+):
+    """Create a new contact (Admin only)."""
+    return crud.create_contact(db, contact)
+
+@app.put("/api/contacts/{contact_id}", response_model=schemas.Contact, tags=["Admin API"])
+def update_contact_api(
+    contact_id: int,
+    contact: schemas.ContactCreate,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_admin_user)
+):
+    """Update an existing contact (Admin only)."""
+    updated_contact = crud.update_contact(db, contact_id, contact)
+    if not updated_contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    return updated_contact
+
+@app.delete("/api/contacts/{contact_id}", tags=["Admin API"])
+def delete_contact_api(
+    contact_id: int,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_admin_user)
+):
+    """Delete a contact (Admin only)."""
+    if not crud.delete_contact(db, contact_id):
+        raise HTTPException(status_code=404, detail="Contact not found")
+    return {"message": "Contact deleted successfully"}

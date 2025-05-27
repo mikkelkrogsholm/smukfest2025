@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Kontakter - Smukfest Risikoværktøj{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Kontakter</h1>
+            <p class="mt-2 text-sm text-gray-700">
+                Kontaktoplysninger for Smukfest 2025
+            </p>
+        </div>
+    </div>
+
+    <!-- Search and Filter Controls -->
+    <div class="mt-6 bg-white shadow rounded-lg p-6">
+        <form method="get" action="/contacts" class="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:space-x-4">
+            <!-- Search Input -->
+            <div class="flex-1">
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Søg</label>
+                <input type="text" 
+                       name="search" 
+                       id="search" 
+                       value="{{ current_search }}" 
+                       placeholder="Søg i navn, telefon, rolle eller kategori..."
+                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+
+            <!-- Category Filter -->
+            <div>
+                <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                <select name="category" 
+                        id="category"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="">Alle kategorier</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if cat == current_category %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Search Button -->
+            <div class="pt-6 sm:pt-0">
+                <button type="submit" 
+                        class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Søg
+                </button>
+            </div>
+
+            <!-- Clear Button -->
+            {% if current_search or current_category %}
+            <div class="pt-6 sm:pt-0">
+                <a href="/contacts" 
+                   class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Ryd
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Contacts Table -->
+    <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+        {% if contacts %}
+        <!-- Mobile Card Layout -->
+        <div class="block sm:hidden">
+            {% for contact in contacts %}
+            <div class="border-b border-gray-200 px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-medium text-gray-900 truncate">{{ contact.name }}</h3>
+                        <p class="text-sm text-gray-500">{{ contact.role }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ contact.category }}</p>
+                    </div>
+                    <div class="flex-shrink-0 ml-4">
+                        <a href="tel:{{ contact.phone.replace(' ', '') }}" 
+                           class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                            {{ contact.phone }}
+                        </a>
+                    </div>
+                </div>
+                {% if contact.channel or contact.notes %}
+                <div class="mt-2 text-xs text-gray-500">
+                    {% if contact.channel %}
+                    <span class="inline-block mr-3">📻 {{ contact.channel }}</span>
+                    {% endif %}
+                    {% if contact.notes %}
+                    <span class="block mt-1">💬 {{ contact.notes }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Desktop Table Layout -->
+        <div class="hidden sm:block overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
+                            Kategori
+                        </th>
+                        <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                            Rolle
+                        </th>
+                        <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                            Navn
+                        </th>
+                        <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
+                            Telefon
+                        </th>
+                        <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
+                            Kanal
+                        </th>
+                        <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                            Noter
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for contact in contacts %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-3 py-4 text-sm font-medium text-gray-900">
+                            <div class="max-w-[140px] truncate" title="{{ contact.category }}">
+                                {{ contact.category }}
+                            </div>
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-900">
+                            <div class="max-w-[180px] truncate" title="{{ contact.role }}">
+                                {{ contact.role }}
+                            </div>
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-900">
+                            <div class="max-w-[120px] truncate" title="{{ contact.name }}">
+                                {{ contact.name }}
+                            </div>
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-900">
+                            <a href="tel:{{ contact.phone.replace(' ', '') }}" 
+                               class="text-indigo-600 hover:text-indigo-900 hover:underline whitespace-nowrap">
+                                {{ contact.phone }}
+                            </a>
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-500">
+                            <div class="max-w-[100px] truncate" title="{{ contact.channel or '' }}">
+                                {{ contact.channel or '-' }}
+                            </div>
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-500">
+                            <div class="max-w-[180px] truncate" title="{{ contact.notes or '' }}">
+                                {{ contact.notes or '-' }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">Ingen kontakter fundet</h3>
+            <p class="mt-1 text-sm text-gray-500">
+                {% if current_search or current_category %}
+                Prøv at ændre dine søgekriterier.
+                {% else %}
+                Der er endnu ikke tilføjet nogen kontakter.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if contacts %}
+    <div class="mt-4 text-sm text-gray-500 text-center">
+        Viser {{ contacts|length }} kontakt{% if contacts|length != 1 %}er{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -40,6 +40,16 @@ class UserBase(BaseModel):
     role: UserRoleEnum = UserRoleEnum.USER
     disabled: bool = False
 
+class ContactBase(BaseModel):
+    category: str
+    role: str
+    name: str
+    phone: str
+    channel: Optional[str] = None
+    notes: Optional[str] = None
+    sort_order: int = 0
+    is_active: bool = True
+
 # --- Create Schemas ---
 class RiskAssessmentCreate(RiskAssessmentBase):
     pass
@@ -55,6 +65,9 @@ class EventCreate(EventBase):
 
 class UserCreate(UserBase):
     password: str # Include password for creation
+
+class ContactCreate(ContactBase):
+    pass
 
 # --- Read/Update Schemas (Includes ID and potentially related data) ---
 # Use model_config for Pydantic v2 compatibility with ORM
@@ -97,6 +110,12 @@ class Event(EventBase):
 class User(UserBase):
     id: int
     created_at: datetime
+    model_config = {"from_attributes": True}
+
+class Contact(ContactBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
     model_config = {"from_attributes": True}
 
 

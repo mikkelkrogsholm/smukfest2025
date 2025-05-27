@@ -211,6 +211,75 @@ def create_user(db: Session, user: schemas.UserCreate, hashed_password: str) -> 
     db.refresh(db_user)
     return db_user
 
+# --- Contact CRUD ---
+
+def get_contact(db: Session, contact_id: int) -> Optional[models.Contact]:
+    """Get a single contact by ID."""
+    return db.get(models.Contact, contact_id)
+
+def get_all_contacts(db: Session, skip: int = 0, limit: int = 1000, search: Optional[str] = None, category: Optional[str] = None) -> List[models.Contact]:
+    """Get all active contacts with optional search and category filtering."""
+    query = select(models.Contact).where(models.Contact.is_active == True)
+    
+    if search:
+        search_term = f"%{search}%"
+        query = query.where(
+            (models.Contact.name.ilike(search_term)) |
+            (models.Contact.phone.ilike(search_term)) |
+            (models.Contact.role.ilike(search_term)) |
+            (models.Contact.category.ilike(search_term))
+        )
+    
+    if category:
+        query = query.where(models.Contact.category == category)
+    
+    query = query.order_by(models.Contact.sort_order, models.Contact.category, models.Contact.role, models.Contact.name)
+    return db.execute(query.offset(skip).limit(limit)).scalars().all()
+
+def get_contact_categories(db: Session) -> List[str]:
+    """Get all unique categories from active contacts."""
+    return db.execute(
+        select(models.Contact.category)
+        .where(models.Contact.is_active == True)
+        .distinct()
+        .order_by(models.Contact.category)
+    ).scalars().all()
+
+def create_contact(db: Session, contact: schemas.ContactCreate) -> models.Contact:
+    """Create a new contact."""
+    db_contact = models.Contact(**contact.model_dump())
+    db.add(db_contact)
+    db.commit()
+    db.refresh(db_contact)
+    return db_contact
+
+def update_contact(db: Session, contact_id: int, contact_update: schemas.ContactCreate) -> Optional[models.Contact]:
+    """Update an existing contact."""
+    existing_contact = db.get(models.Contact, contact_id)
+    if not existing_contact:
+        return None
+    
+    update_data = contact_update.model_dump()
+    update_data['updated_at'] = datetime.utcnow()
+    
+    for field, value in update_data.items():
+        setattr(existing_contact, field, value)
+    
+    db.commit()
+    db.refresh(existing_contact)
+    return existing_contact
+
+def delete_contact(db: Session, contact_id: int) -> bool:
+    """Soft delete a contact by setting is_active to False."""
+    existing_contact = db.get(models.Contact, contact_id)
+    if not existing_contact:
+        return False
+    
+    existing_contact.is_active = False
+    existing_contact.updated_at = datetime.utcnow()
+    db.commit()
+    return True
+
 # --- Deprecated Functions (Commented out) ---
 # def create_or_update_artist(db: Session, artist_data: dict) -> models.Artist:
 #     # ... (old implementation) ...
