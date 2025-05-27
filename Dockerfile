@@ -40,6 +40,6 @@ EXPOSE 8000
 # Start command with hot-reloading for development
 # Note: The host 0.0.0.0 makes it accessible from outside the container
 # Use --reload-dir to specify which directories to watch (avoids reload on script changes)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app",  "--proxy-headers", "--forwarded-allow-ips=*"]
 # For production, you might remove --reload and use multiple workers:
 # CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"] 

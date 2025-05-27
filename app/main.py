@@ -418,6 +418,7 @@ def calendar_view(
 ):
     """Renders a calendar grid with stages as columns and 15-min increments as rows."""
     import datetime
+    from datetime import time, timedelta
     from collections import defaultdict
 
     # Determine the date to show
@@ -431,16 +432,27 @@ def calendar_view(
 
     # Fetch all stages
     stages = [stage for stage in crud.get_all_stages(db) if stage.name != 'TBA']
-    stage_names = [stage.name for stage in stages]
+    SHORT_NAMES = {
+        'Bøgescenerne': 'Bøge',
+        'Stjernescenen': 'Stjerne',
+        'Månescenen': 'Månen',
+        'The Hood': 'Hood',
+    }
+    stage_dicts = []
+    for stage in stages:
+        stage_dicts.append({
+            "name": stage.name,
+            "short_name": SHORT_NAMES.get(stage.name, stage.name)
+        })
+    stage_names = [stage["name"] for stage in stage_dicts]
 
     # Fetch all events for the selected festival day
     events = crud.get_events_for_festival_day(db, target_date)
     # Fetch all risk assessments as a dict keyed by artist_slug
     assessments = crud.get_all_risk_assessments_dict(db)
-
     # Generate 15-min time slots for the day (08:00 to 03:00 next day)
     start_time = datetime.datetime.combine(target_date.date(), time(8, 0))
-    end_time = start_time + timedelta(hours=19)  # 03:00 next day
+    end_time = start_time + timedelta(hours=19)
 
     # If there are events, trim the time range to first/last event
     if events:
@@ -495,12 +507,23 @@ def calendar_view(
         risk_level = None
         intensity_level = None
         density_level = None
+        artist_description = None # Initialize artist_description
+        remarks = None
+        crowd_profile = None
+        notes = None
+
         if ev.artist and ev.artist.slug:
             assessment = assessments.get(ev.artist.slug)
             if assessment:
                 risk_level = assessment.risk_level
                 intensity_level = assessment.intensity_level
                 density_level = assessment.density_level
+                remarks = assessment.remarks
+                crowd_profile = assessment.crowd_profile
+                notes = assessment.notes
+            # Get artist description
+            artist_description = ev.artist.description # Access description from the related artist object
+        
         return {
             "event_id": ev.event_id,
             "artist": {"title": ev.artist.title if ev.artist else None, "slug": ev.artist.slug if ev.artist else None},
@@ -510,19 +533,249 @@ def calendar_view(
             "risk_level": risk_level,
             "intensity_level": intensity_level,
             "density_level": density_level,
+            "description": artist_description, # Add the artist's description here
+            "remarks": remarks,
+            "crowd_profile": crowd_profile,
+            "notes": notes
         }
     all_events_raw = [event_to_dict(ev) for ev in events]
 
     return templates.TemplateResponse(
-        "calendar_view.html",
+        "calendar_view_custom.html",
         {
             "request": request,
-            "stages": stages,
+            "stages": stage_dicts,
             "stage_names": stage_names,
-            "time_slots": time_slots,
+            "time_slots": [slot.isoformat() for slot in time_slots],
             "events_by_stage_and_time": events_by_stage_and_time,
             "all_events_raw": all_events_raw,
             "selected_date": target_date.strftime("%Y-%m-%d"),
+            "current_user": current_user.username,
+            "current_user_role": current_user.role.value,
+        }
+    )
+
+@app.get("/calendar/print", response_class=HTMLResponse)
+def calendar_print_view(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user),
+    selected_date: Optional[str] = Query(None, alias="date")
+):
+    """Renders a beautiful SVG-based print calendar."""
+    import datetime
+    from datetime import time, timedelta
+    
+    # Determine the date to show
+    if selected_date:
+        try:
+            target_date = datetime.datetime.strptime(selected_date, "%Y-%m-%d")
+        except Exception:
+            target_date = datetime.datetime.now()
+    else:
+        target_date = datetime.datetime.now()
+
+    # Fetch all stages (exclude TBA)
+    stages = [stage for stage in crud.get_all_stages(db) if stage.name != 'TBA']
+    SHORT_NAMES = {
+        'Bøgescenerne': 'Bøge',
+        'Stjernescenen': 'Stjerne',
+        'Månescenen': 'Månen',
+        'The Hood': 'Hood',
+    }
+    
+    # Fetch all events for the selected festival day
+    events = crud.get_events_for_festival_day(db, target_date)
+    assessments = crud.get_all_risk_assessments_dict(db)
+
+    # Calculate time bounds
+    if events:
+        event_starts = [e.start_time for e in events if e.start_time]
+        event_ends = [(e.end_time or (e.start_time + timedelta(hours=1))) for e in events if e.start_time]
+        
+        if not event_starts or not event_ends: # Handle case with no valid event times
+            start_time = datetime.datetime.combine(target_date.date(), time(12, 0)) # Default start
+            end_time = datetime.datetime.combine(target_date.date(), time(23, 59))   # Default end
+        else:
+            actual_start = min(event_starts)
+            actual_end = max(event_ends)
+            
+            # Round to hour boundaries
+            start_time = actual_start.replace(minute=0, second=0, microsecond=0)
+            end_time = actual_end.replace(minute=0, second=0, microsecond=0)
+            if actual_end.minute > 0 or actual_end.second > 0 or actual_end.microsecond > 0 :
+                end_time += timedelta(hours=1)
+            if end_time <= start_time: # Ensure end_time is after start_time
+                end_time = start_time + timedelta(hours=1)
+
+
+    else: # No events, set a default time range
+        start_time = datetime.datetime.combine(target_date.date(), time(12, 0)) # Default start 12:00
+        end_time = datetime.datetime.combine(target_date.date() + timedelta(days=1), time(2, 0)) # Default end 02:00 next day
+
+
+    # Generate SVG
+    def generate_svg_calendar():
+        # SVG dimensions - Further Adjusted for better A4 fit
+        svg_width = 1080 # Reduced from 1100
+        svg_height = 765 # Reduced from 780
+        
+        # Margins for layout - Further Adjusted
+        margin_top = 55      # Reduced from 60
+        margin_bottom = 45   # Reduced from 50 
+        margin_left = 55     # Reduced from 60
+        margin_right = 20    # Reduced from 25
+        
+        # Grid dimensions (where events are plotted)
+        grid_x_start = margin_left
+        grid_y_start = margin_top
+        grid_width = svg_width - margin_left - margin_right
+        grid_height = svg_height - margin_top - margin_bottom
+        
+        num_stages = len(stages)
+        stage_column_width = grid_width / num_stages if num_stages > 0 else grid_width
+        
+        # Time calculations for vertical axis
+        if end_time <= start_time:
+            total_minutes = 60 
+        else:
+            total_minutes = (end_time - start_time).total_seconds() / 60
+        
+        if total_minutes == 0: total_minutes = 1
+        height_per_minute = grid_height / total_minutes
+        
+        colors = {
+            'riskHigh': '#ef4444',
+            'riskMedium': '#fbbf24',
+            'riskLow': '#10b981',
+            'riskUnknown': '#6b7280',
+            'stageBg': '#f9fafb',
+            'textWhite': '#FFFFFF',
+            'textMediumRisk': '#854d0e',
+            'textDark': '#1f2937',
+            'textLight': '#6b7280',
+            'borderLight': '#e5e7eb',
+            'borderMedium': '#cbd5e0'
+        }
+
+        svg_parts = [f'''<svg viewBox="0 0 {svg_width} {svg_height}" xmlns="http://www.w3.org/2000/svg" style="font-family: Arial, sans-serif;">
+<defs>
+  <!-- Defs section is intentionally empty for simplified style -->
+</defs>''']
+
+        svg_parts.append(f'<rect width="{svg_width}" height="{svg_height}" fill="{colors["textWhite"]}"/>')
+        
+        date_str = target_date.strftime("%d. %B %Y")
+        svg_parts.append(f'''<text x="{svg_width/2}" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="{colors["textDark"]}">Smukfest Program: {date_str}</text>''') # Y reduced, font size reduced
+        
+        for i, stage in enumerate(stages):
+            x_stage = grid_x_start + i * stage_column_width
+            stage_name = SHORT_NAMES.get(stage.name, stage.name)
+            svg_parts.append(f'<rect x="{x_stage}" y="{grid_y_start}" width="{stage_column_width}" height="{grid_height}" fill="{colors["stageBg"]}" stroke="{colors["borderLight"]}" stroke-width="0.4"/>') # Thinner stroke
+            svg_parts.append(f'''<text x="{x_stage + stage_column_width/2}" y="{grid_y_start - 10}" text-anchor="middle" font-size="12" font-weight="bold" fill="{colors["textDark"]}">{stage_name}</text>''') # Y reduced, font size reduced
+
+        current_t = start_time
+        while current_t <= end_time:
+            minutes_from_start_grid = (current_t - start_time).total_seconds() / 60
+            y_pos = grid_y_start + minutes_from_start_grid * height_per_minute
+            is_hour = current_t.minute == 0
+            line_opacity = "0.5" if is_hour else "0.2"
+            line_stroke_width = "0.5" if is_hour else "0.3"
+            svg_parts.append(f'<line x1="{grid_x_start}" y1="{y_pos}" x2="{grid_x_start + grid_width}" y2="{y_pos}" stroke="{colors["borderMedium"]}" stroke-width="{line_stroke_width}" opacity="{line_opacity}"/>')
+            if is_hour:
+                time_str = current_t.strftime("%H:%M")
+                svg_parts.append(f'''<text x="{grid_x_start - 7}" y="{y_pos + 3}" text-anchor="end" font-size="9" font-weight="medium" fill="{colors["textLight"]}">{time_str}</text>''') # X reduced, font size reduced
+            current_t += timedelta(minutes=30) 
+
+        for event in events:
+            if not event.stage or not event.start_time or event.stage.name == 'TBA': continue
+            stage_index = -1
+            for i, s in enumerate(stages):
+                if s.name == event.stage.name: stage_index = i; break
+            if stage_index == -1: continue
+
+            event_start_dt = event.start_time
+            event_end_dt = event.end_time or (event_start_dt + timedelta(hours=1))
+            event_start_dt_clipped = max(event_start_dt, start_time)
+            event_end_dt_clipped = min(event_end_dt, end_time)
+            if event_end_dt_clipped <= event_start_dt_clipped: continue
+
+            minutes_from_start_event = (event_start_dt_clipped - start_time).total_seconds() / 60
+            duration_minutes_event = (event_end_dt_clipped - event_start_dt_clipped).total_seconds() / 60
+            if duration_minutes_event <= 0: continue
+
+            event_x = grid_x_start + stage_index * stage_column_width + 1.5 # Padding reduced
+            event_width_px = stage_column_width - 3      # Padding reduced
+            event_y = grid_y_start + minutes_from_start_event * height_per_minute
+            event_height_px = duration_minutes_event * height_per_minute
+            event_height_px = max(event_height_px, 2) # Min height reduced
+
+            risk_level = 'unknown'
+            if event.artist and event.artist.slug:
+                assessment = assessments.get(event.artist.slug)
+                if assessment and assessment.risk_level: risk_level = assessment.risk_level.lower()
+            
+            risk_level_title = risk_level.title()
+            risk_color_key = f'risk{risk_level_title}'
+            event_fill_color = colors.get(risk_color_key, colors['riskUnknown'])
+            text_color = colors['textWhite'] if risk_level != "medium" else colors['textMediumRisk']
+            
+            artist_name = event.artist.title if event.artist else 'Ukendt'
+            start_time_str = event_start_dt.strftime("%H:%M")
+            end_time_str = event_end_dt.strftime("%H:%M")
+            
+            font_size_artist = 9 # Base reduced
+            font_size_time = 7   # Base reduced
+            text_y_offset_artist = -3 # Adjusted
+            text_y_offset_time = 5    # Adjusted
+
+            if event_height_px < 25: 
+                font_size_artist = 7
+                font_size_time = 5
+                text_y_offset_artist = -2
+                text_y_offset_time = 3
+            if event_height_px < 15: 
+                 font_size_artist = 6 
+                 text_y_offset_artist = 0 
+                 font_size_time = 0 
+            if event_width_px < 40: 
+                font_size_artist = min(font_size_artist, 5)
+
+            svg_parts.append(f'''<g transform="translate({event_x}, {event_y})">
+                <rect width="{event_width_px}" height="{event_height_px}" rx="1.5" ry="1.5" fill="{event_fill_color}"/>
+                <text x="{event_width_px/2}" y="{event_height_px/2 + text_y_offset_artist}" text-anchor="middle" font-size="{font_size_artist}" font-weight="bold" fill="{text_color}" dominant-baseline="middle">{artist_name}</text>
+                {f'<text x="{event_width_px/2}" y="{event_height_px/2 + text_y_offset_time}" text-anchor="middle" font-size="{font_size_time}" fill="{text_color}" opacity="0.85" dominant-baseline="middle">{start_time_str}-{end_time_str}</text>' if font_size_time > 0 else ''}
+            </g>''')
+        
+        legend_y_start = svg_height - margin_bottom + 18 # Adjusted for new margin
+        legend_box_size = 8 
+        legend_font_size = 8 
+        legend_spacing = 50 
+        legend_items = [
+            ('Høj', colors['riskHigh']),
+            ('Medium', colors['riskMedium']),
+            ('Lav', colors['riskLow']),
+            ('Ukendt', colors['riskUnknown'])
+        ]
+        total_legend_width = (len(legend_items) * legend_spacing) - (legend_spacing - (legend_box_size + 4 + 25)) 
+        current_legend_x = margin_left + (grid_width - total_legend_width) / 2 
+        for label, fill_color in legend_items:
+            svg_parts.append(f'<rect x="{current_legend_x}" y="{legend_y_start - legend_box_size}" width="{legend_box_size}" height="{legend_box_size}" rx="1.5" fill="{fill_color}"/>')
+            svg_parts.append(f'''<text x="{current_legend_x + legend_box_size + 3}" y="{legend_y_start - legend_box_size + (legend_box_size/2)}" font-size="{legend_font_size}" fill="{colors["textDark"]}" dominant-baseline="middle">{label}</text>''')
+            current_legend_x += legend_spacing 
+        
+        svg_parts.append('</svg>')
+        return ''.join(svg_parts)
+
+    svg_calendar_str = generate_svg_calendar()
+    
+    return templates.TemplateResponse(
+        "calendar_view_print.html",
+        {
+            "request": request,
+            "svg_calendar": svg_calendar_str,
+            "selected_date": target_date.strftime("%Y-%m-%d"),
+            "selected_date_display": target_date.strftime("%d. %B %Y"),
             "current_user": current_user.username,
             "current_user_role": current_user.role.value,
         }

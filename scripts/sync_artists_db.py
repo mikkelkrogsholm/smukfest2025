@@ -116,6 +116,7 @@ def fetch_and_parse_api_data(url: str) -> Optional[Dict[str, Any]]:
             'title': title,
             'image_url': image_url,
             'nationality': nationality,
+            'description': artist_data.get('previewText'), # Map previewText to description
             'spotify_link': artist_data.get('spotifyLink'),
             # We'll handle created_at/updated_at during insert/update
             # 'created_at': artist_data.get('createdAt'),
@@ -190,6 +191,7 @@ def sync_database(db: Session, parsed_data: Dict[str, Any]):
             'title': artist_data.get('title'),
             'image_url': artist_data.get('image_url'),
             'nationality': artist_data.get('nationality'),
+            'description': artist_data.get('previewText'), # Map previewText to description
             'spotify_link': artist_data.get('spotify_link'),
             'updated_at': now # Set updated_at for both inserts and updates
         }

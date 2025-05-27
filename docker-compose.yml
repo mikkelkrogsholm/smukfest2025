@@ -41,6 +41,8 @@ services:
       - "traefik.http.routers.smukrisiko.entrypoints=websecure"
       - "traefik.http.routers.smukrisiko.tls.certresolver=myresolver"
       - "traefik.http.services.smukrisiko.loadbalancer.server.port=8000"
+      - "traefik.http.routers.smukrisiko.middlewares=smukrisiko-sslheader"
+      - "traefik.http.middlewares.smukrisiko-sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
 
 volumes:
   letsencrypt:

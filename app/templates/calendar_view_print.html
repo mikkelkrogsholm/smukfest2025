@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Scenekalender - Print{% endblock %}
+
+{% block content %}
+<!-- Screen-only controls -->
+<div class="no-print mb-6">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h1 class="text-2xl font-bold mb-4">Print Scenekalender</h1>
+    <p class="text-gray-600 mb-4">{{ selected_date_display }}</p>
+    
+    <div class="flex gap-4 mb-4">
+      <button onclick="window.print()" 
+              class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        🖨️ Print
+      </button>
+       <a href="/calendar?date={{ selected_date }}" 
+         class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">
+        ← Kalender
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- SVG Calendar for Print -->
+<div class="print-svg-container">
+  {{ svg_calendar|safe }}
+</div>
+
+<style>
+/* Screen styles for SVG container */
+.print-svg-container {
+  max-width: 1123px; /* A4 landscape width at 96 DPI */
+  margin: 20px auto;
+  border: 1px solid #ccc;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.print-svg-container svg {
+  display: block; /* Remove extra space below SVG */
+  width: 100%;
+  height: auto;
+}
+
+/* Print styles */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 5mm; /* Adjust margin as needed - reduced from 6mm */
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure main content area takes full width/height for print if needed */
+  body > main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100%;
+    height: 100%;
+    display: flex; /* Optional: for centering or specific layout */
+    justify-content: center; /* Optional: centers SVG if smaller than page */
+    align-items: center;   /* Optional: centers SVG if smaller than page */
+  }
+  
+  .print-svg-container {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+    /* SVG will scale to fit this container */
+  }
+
+  .print-svg-container svg {
+    width: 100%;
+    height: 100%;
+    /* The viewBox will handle the aspect ratio */
+  }
+}
+</style>
+{% endblock %} 

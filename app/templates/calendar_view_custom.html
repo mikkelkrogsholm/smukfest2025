@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Scenekalender (Custom){% endblock %}
+
+{% block content %}
+<header class="bg-slate-800 text-white py-6 text-center mb-6 shadow-md rounded-lg">
+    <h1 class="text-3xl font-bold">Festival Kalender</h1>
+</header>
+
+<!-- Date Picker and Print Button -->
+<div class="mb-4 flex flex-wrap items-center justify-between gap-4">
+  <form method="get" class="flex flex-wrap items-center gap-2">
+    <label for="date" class="text-sm font-medium">Vælg dato:</label>
+    <input type="date" id="date" name="date" value="{{ selected_date }}" class="border rounded px-2 py-1 text-sm" onchange="this.form.submit()">
+  </form>
+  
+  <div class="flex gap-2">
+    <a href="/calendar/print?date={{ selected_date }}" target="_blank" 
+       class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm flex items-center gap-2">
+      📄 Print View
+    </a>
+    <a href="/calendar/print?date={{ selected_date }}&auto=true" target="_blank" 
+       class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm flex items-center gap-2">
+      🖨️ Print Direkte
+    </a>
+  </div>
+</div>
+
+<div id="festival-calendar-container" class="max-w-7xl mx-auto px-2 sm:px-4">
+    <!-- Kalenderen vil blive genereret her af JavaScript -->
+</div>
+
+<!-- Modal Struktur - Opdateret med Tailwind klasser -->
+<div id="event-modal-overlay" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+    <div id="event-modal-content" class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="modal-title" class="text-2xl font-semibold text-slate-700">Event Detaljer</h2>
+            <button id="modal-close-button" class="text-slate-500 hover:text-slate-700 text-2xl">×</button>
+        </div>
+        
+        <!-- Basic Event Info -->
+        <div class="mb-4 space-y-2">
+            <p><strong class="text-slate-600">Tidspunkt:</strong> <span id="modal-time"></span></p>
+            <p><strong class="text-slate-600">Scene:</strong> <span id="modal-scene"></span></p>
+            <p><strong class="text-slate-600">Risiko:</strong> <span id="modal-risk" class="font-semibold"></span></p>
+        </div>
+
+        <!-- Risk Assessment Details Section -->
+        <div id="modal-risk-details" class="mb-4">
+            <h3 class="text-lg font-semibold text-slate-700 border-b border-gray-200 pb-2 mb-3">Risikovurderingsdetaljer</h3>
+            
+            <div class="space-y-3 text-sm">
+                <div>
+                    <dt class="font-medium text-slate-500">Bemærkninger</dt>
+                    <dd id="modal-remarks" class="mt-1 text-slate-800 whitespace-pre-wrap bg-gray-50 p-2 rounded">
+                        <span class="text-gray-400 italic">N/A</span>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-slate-500">Publikumsprofil</dt>
+                    <dd id="modal-crowd-profile" class="mt-1 text-slate-800 whitespace-pre-wrap bg-gray-50 p-2 rounded">
+                        <span class="text-gray-400 italic">N/A</span>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-slate-500">Interne Noter</dt>
+                    <dd id="modal-notes" class="mt-1 text-slate-800 whitespace-pre-wrap bg-gray-50 p-2 rounded">
+                        <span class="text-gray-400 italic">N/A</span>
+                    </dd>
+                </div>
+            </div>
+        </div>
+
+        <!-- Artist Description (if available) -->
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-slate-700 border-b border-gray-200 pb-2 mb-3">Beskrivelse</h3>
+            <p id="modal-description" class="text-slate-700 whitespace-pre-wrap bg-gray-50 p-2 rounded"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Inject backend data as JSON safely -->
+<script id="scenes-data" type="application/json">{{ stages | tojson | safe }}</script>
+<script id="events-data" type="application/json">{{ all_events_raw | tojson | safe }}</script>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Tailwind already included in base.html -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/line-clamp@0.4.0/dist/line-clamp.min.css">
+<script src="{{ url_for('static', path='festival-calendar-tailwind.js') }}"></script>
+<script>
+    // Read JSON data from <script type="application/json">
+    function getJsonData(id) {
+        const el = document.getElementById(id);
+        if (!el) return [];
+        try { return JSON.parse(el.textContent); } catch (e) { return []; }
+    }
+    // Tilføj slugify-funktion så sceneId matcher JS
+    function slugify(str) {
+        return (str || '').toLowerCase()
+            .replace(/å/g, 'a')
+            .replace(/ø/g, 'o')
+            .replace(/æ/g, 'ae')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+    }
+    const scenesData = getJsonData('scenes-data');
+    const rawEvents = getJsonData('events-data');
+    // Find earliest and latest event times for dynamic calendar range
+    let minTime = '16:00';
+    let maxTime = '03:00';
+    if (rawEvents.length > 0) {
+        const times = rawEvents.flatMap(ev => [ev.start_time, ev.end_time].filter(Boolean));
+        const dateObjs = times.map(t => new Date(t)).filter(d => !isNaN(d));
+        if (dateObjs.length > 0) {
+            const minDate = new Date(Math.min(...dateObjs.map(d => d.getTime())));
+            const maxDate = new Date(Math.max(...dateObjs.map(d => d.getTime())));
+            minTime = minDate.toTimeString().slice(0,5);
+            maxTime = maxDate.toTimeString().slice(0,5);
+        }
+    }
+    const eventsData = rawEvents.map(ev => ({
+        id: ev.event_id,
+        sceneId: slugify(ev.stage && ev.stage.name ? ev.stage.name : 'TBA'),
+        title: ev.artist && ev.artist.title ? ev.artist.title : 'Ukendt',
+        startTime: ev.start_time,
+        endTime: ev.end_time,
+        description: ev.description || '',
+        riskLevel: ev.risk_level,
+        intensityLevel: ev.intensity_level,
+        densityLevel: ev.density_level,
+        remarks: ev.remarks,
+        crowdProfile: ev.crowd_profile,
+        notes: ev.notes
+    }));
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof FestivalCalendar !== 'undefined') {
+            const calendar = new FestivalCalendar('#festival-calendar-container', {
+                scenes: scenesData,
+                events: eventsData,
+                pixelsPerHour: 100,
+                dayStartTime: minTime,
+                dayEndTime: maxTime,
+            });
+            calendar.render();
+        } else {
+            console.error("FestivalCalendar class not found.");
+            const errorContainer = document.querySelector('#festival-calendar-container');
+            if (errorContainer) {
+                errorContainer.innerHTML = '<p class="text-red-500 text-center p-4">Fejl ved indlæsning af kalender.</p>';
+            }
+        }
+    });
+</script>
+{% endblock %} 
