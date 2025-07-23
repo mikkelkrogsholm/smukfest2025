@@ -162,7 +162,7 @@ class FestivalCalendar {
         const calendarEl = document.createElement('div');
         calendarEl.classList.add(
             'festival-calendar', 'flex', 'relative', 'border', 'border-slate-300', 
-            'bg-white', 'rounded-lg', 'shadow-lg', 'min-h-svh-600'
+            'bg-white', 'rounded-lg', 'shadow-lg'
         );
         const timeAxisEl = this.renderTimeAxis();
         calendarEl.appendChild(timeAxisEl);
@@ -181,15 +181,15 @@ class FestivalCalendar {
         // ... (samme som før)
         const timeAxisEl = document.createElement('div');
         timeAxisEl.classList.add(
-            'w-12', 'sm:w-16', 
-            'border-r', 'border-slate-200', 'pt-10', 
+            'w-10', 'sm:w-12', 
+            'border-r', 'border-slate-200', 'pt-8', 
             'sticky', 'left-0', 'bg-slate-50', 'z-20'
         );
         for (let i = 0; i < this.totalHours; i++) {
             const timeSlotEl = document.createElement('div');
             timeSlotEl.classList.add(
                 'flex', 'items-center', 'justify-center', 
-                'text-[10px]', 'sm:text-xs', 
+                'text-[8px]', 'sm:text-[10px]', 
                 'text-slate-600', 'border-b', 'border-dotted', 'border-slate-300', 'box-border'
             );
             if (i === this.totalHours - 1) {
@@ -209,9 +209,8 @@ class FestivalCalendar {
         const sceneEl = document.createElement('div');
         sceneEl.classList.add(
             'fc-scene', 'flex-1', 
-            'sm:flex-grow', 'sm:flex-shrink-0', 
-            'sm:min-w-[180px]', 'md:min-w-[220px]', 'lg:min-w-[260px]', 
-            'relative'
+            'flex-grow', 'flex-shrink', 
+            'relative', 'min-w-0'
         );
         if (!isFirstScene) {
             sceneEl.classList.add('border-l', 'border-slate-200');
@@ -219,12 +218,12 @@ class FestivalCalendar {
         sceneEl.dataset.sceneId = FestivalCalendar.slugify(scene.name);
         const headerEl = document.createElement('div');
         headerEl.classList.add(
-            'h-10', 'flex', 'items-center', 'justify-center', 'text-center',
-            'font-semibold', 'text-xs', 'sm:text-sm', 
+            'h-8', 'flex', 'items-center', 'justify-center', 'text-center',
+            'font-semibold', 'text-[10px]', 'sm:text-xs', 
             'text-slate-700', 'bg-slate-100', 'border-b', 'border-slate-300', 
-            'sticky', 'top-0', 'z-30', 'px-1', 'sm:px-2', 'truncate'
+            'sticky', 'top-0', 'z-30', 'px-1', 'truncate'
         );
-        headerEl.textContent = scene.name;
+        headerEl.textContent = scene.short_name || scene.name;
         sceneEl.appendChild(headerEl);
         const bodyEl = document.createElement('div');
         bodyEl.classList.add('relative', 'fc-scene-body-area'); 
@@ -255,9 +254,9 @@ class FestivalCalendar {
 
         const eventEl = document.createElement('div');
         eventEl.classList.add(
-            'absolute', 'left-[2px]', 'right-[2px]', 'sm:left-[6px]', 'sm:right-[6px]',
-            'text-white', 'p-1', 'sm:p-1.5', 'rounded', 'shadow-md', 
-            'text-[10px]', 'sm:text-xs', 'overflow-hidden', 
+            'absolute', 'left-[1px]', 'right-[1px]', 'sm:left-[2px]', 'sm:right-[2px]',
+            'text-white', 'p-0.5', 'sm:p-1', 'rounded', 'shadow-md', 
+            'text-[8px]', 'sm:text-[10px]', 'overflow-hidden', 
             'transition-all', 'duration-200', 'ease-in-out', 'z-10',
             'cursor-pointer' 
         );
@@ -312,9 +311,9 @@ class FestivalCalendar {
         titleEl.textContent = eventData.title;
         eventEl.appendChild(titleEl);
 
-        if (height > (window.innerWidth < 640 ? 22 : 25) ) {
+        if (height > 30) {
             const timeEl = document.createElement('div');
-            timeEl.classList.add('text-[9px]', 'sm:text-[10px]', 'opacity-80');
+            timeEl.classList.add('text-[7px]', 'sm:text-[8px]', 'opacity-80');
             timeEl.textContent = `${this.formatTime(startTime)} - ${this.formatTime(endTime)}`;
             eventEl.appendChild(timeEl);
         }
