@@ -428,23 +428,61 @@ def calendar_view(
     from datetime import time, timedelta
     from collections import defaultdict
 
+    # Get all festival dates
+    festival_dates = crud.get_festival_dates(db)
+    
     # Determine the date to show
     if selected_date:
         try:
             target_date = datetime.datetime.strptime(selected_date, "%Y-%m-%d")
         except Exception:
-            target_date = datetime.datetime.now()
+            # If invalid date, use smart default
+            target_date = None
     else:
+        target_date = None
+    
+    # Smart default: find nearest festival date
+    if target_date is None and festival_dates:
+        today = datetime.datetime.now().date()
+        # Find future dates
+        future_dates = [d for d in festival_dates if d >= today]
+        if future_dates:
+            # Use closest future date
+            target_date = datetime.datetime.combine(future_dates[0], datetime.time())
+        else:
+            # No future dates, use last festival date
+            target_date = datetime.datetime.combine(festival_dates[-1], datetime.time())
+    elif target_date is None:
+        # No festival dates at all, fallback to today
         target_date = datetime.datetime.now()
 
     # Fetch all stages
-    stages = [stage for stage in crud.get_all_stages(db) if stage.name != 'TBA']
+    all_stages = [stage for stage in crud.get_all_stages(db) if stage.name != 'TBA']
+    
+    # Define stage order and short names
+    STAGE_ORDER = {
+        'Bøgescenerne': 1,
+        'Stjernescenen': 2, 
+        'Månen': 3,  # Changed from 'Månescenen'
+        'The Hood': 4,
+        'Udsigten': 5,
+        'Live Camp': 6,
+        'Slotskirken': 7
+    }
+    
     SHORT_NAMES = {
         'Bøgescenerne': 'Bøge',
         'Stjernescenen': 'Stjerne',
-        'Månescenen': 'Månen',
+        'Månen': 'Månen',  # Changed from 'Månescenen'
         'The Hood': 'Hood',
+        'Udsigten': 'Udsigten',
+        'Live Camp': 'Live Camp',
+        'Slotskirken': 'Slotskirken'
     }
+    
+    # Sort stages according to defined order
+    stages = sorted(all_stages, key=lambda s: STAGE_ORDER.get(s.name, 999))
+    
     stage_dicts = []
     for stage in stages:
         stage_dicts.append({
@@ -547,6 +585,10 @@ def calendar_view(
         }
     all_events_raw = [event_to_dict(ev) for ev in events]
 
+    # Festival day runs from 06:00 to 05:59 next day
+    festival_start_time = target_date.replace(hour=6, minute=0, second=0).isoformat()
+    festival_end_time = (target_date + timedelta(days=1)).replace(hour=5, minute=59, second=59).isoformat()
+    
     return templates.TemplateResponse(
         "calendar_view_custom.html",
         {
@@ -557,6 +599,20 @@ def calendar_view(
             "events_by_stage_and_time": events_by_stage_and_time,
             "all_events_raw": all_events_raw,
             "selected_date": target_date.strftime("%Y-%m-%d"),
+            "festival_start_time": festival_start_time,
+            "festival_end_time": festival_end_time,
+            "festival_dates": [
+                {
+                    "date": d,
+                    "str": d.strftime("%Y-%m-%d"),
+                    "display": format_datetime(
+                        datetime.datetime.combine(d, datetime.time(12, 0)), 
+                        "%A %-d/%-m", 
+                        use_festival_day=False
+                    )
+                } 
+                for d in festival_dates
+            ],
             "current_user": current_user.username,
             "current_user_role": current_user.role.value,
         }
@@ -583,13 +639,31 @@ def calendar_print_view(
         target_date = datetime.datetime.now()
 
     # Fetch all stages (exclude TBA)
-    stages = [stage for stage in crud.get_all_stages(db) if stage.name != 'TBA']
+    all_stages = [stage for stage in crud.get_all_stages(db) if stage.name != 'TBA']
+    
+    # Use same stage order as calendar view
+    STAGE_ORDER = {
+        'Bøgescenerne': 1,
+        'Stjernescenen': 2, 
+        'Månen': 3,  # Changed from 'Månescenen'
+        'The Hood': 4,
+        'Udsigten': 5,
+        'Live Camp': 6,
+        'Slotskirken': 7
+    }
+    
     SHORT_NAMES = {
         'Bøgescenerne': 'Bøge',
         'Stjernescenen': 'Stjerne',
-        'Månescenen': 'Månen',
+        'Månen': 'Månen',  # Changed from 'Månescenen'
         'The Hood': 'Hood',
+        'Udsigten': 'Udsigten',
+        'Live Camp': 'Live Camp',
+        'Slotskirken': 'Slotskirken'
     }
+    
+    # Sort stages according to defined order
+    stages = sorted(all_stages, key=lambda s: STAGE_ORDER.get(s.name, 999))
     
     # Fetch all events for the selected festival day
     events = crud.get_events_for_festival_day(db, target_date)

@@ -100,8 +100,10 @@ def create_event(db: Session, event: schemas.EventCreate) -> models.Event:
 
 def get_events_for_festival_day(db: Session, date: datetime) -> list[models.Event]:
     """Fetches all events for a 'festivaldag' (06:00 to 05:59 next day)."""
+    # Festival day starts at 06:00
     start_of_day = date.replace(hour=6, minute=0, second=0, microsecond=0)
-    end_of_day = (start_of_day + timedelta(days=1))
+    # Festival day ends at 05:59:59 next day (we use < 06:00 in the query)
+    end_of_day = (date + timedelta(days=1)).replace(hour=6, minute=0, second=0, microsecond=0)
     return db.execute(
         select(models.Event)
         .options(joinedload(models.Event.artist), joinedload(models.Event.stage))
@@ -111,6 +113,28 @@ def get_events_for_festival_day(db: Session, date: datetime) -> list[models.Even
         )
         .order_by(models.Event.start_time)
     ).scalars().all()
+
+def get_festival_dates(db: Session) -> List[datetime.date]:
+    """Get all unique festival dates that have events, adjusted for festival days (00:00-05:59 = previous day)."""
+    # Get all events with start times
+    events = db.execute(
+        select(models.Event.start_time)
+        .where(models.Event.start_time.isnot(None))
+        .order_by(models.Event.start_time)
+    ).scalars().all()
+    
+    # Calculate festival day for each event and collect unique dates
+    festival_dates = set()
+    for event_time in events:
+        # Events between 00:00-05:59 belong to previous day's festival
+        if event_time.hour < 6:
+            festival_date = (event_time - timedelta(days=1)).date()
+        else:
+            festival_date = event_time.date()
+        festival_dates.add(festival_date)
+    
+    # Return sorted list of dates
+    return sorted(list(festival_dates))
 
 # --- Stage CRUD ---
 

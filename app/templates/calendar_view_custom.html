@@ -9,22 +9,43 @@
     <h1 class="text-3xl font-bold">Festival Kalender</h1>
 </header>
 
-<!-- Date Picker and Print Button -->
-<div class="mb-4 flex flex-wrap items-center justify-between gap-4 mx-6 sm:mx-6 lg:mx-8">
-  <form method="get" class="flex flex-wrap items-center gap-2">
-    <label for="date" class="text-sm font-medium">Vælg dato:</label>
-    <input type="date" id="date" name="date" value="{{ selected_date }}" class="border rounded px-2 py-1 text-sm" onchange="this.form.submit()">
-  </form>
+<!-- Festival Days Navigation and Print Button -->
+<div class="mb-6 mx-6 sm:mx-6 lg:mx-8">
+  <!-- Mobile: Stack vertically, Desktop: Side by side -->
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <!-- Festival Days Buttons -->
+    <div class="overflow-x-auto pb-2">
+      <div class="flex gap-2 min-w-fit">
+        {% if not festival_dates %}
+          <p class="text-gray-500 italic">Ingen festivaldage fundet med events.</p>
+        {% else %}
+          {% for date_info in festival_dates %}
+            {% set is_active = date_info.str == selected_date %}
+            <a href="/calendar?date={{ date_info.str }}" 
+               class="px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap
+                      {% if is_active %}
+                        bg-slate-800 text-white hover:bg-slate-900 shadow-md
+                      {% else %}
+                        bg-gray-200 text-gray-700 hover:bg-gray-300
+                      {% endif %}">
+              {{ date_info.display }}
+            </a>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
   
-  <div class="flex gap-2">
-    <a href="/calendar/print?date={{ selected_date }}" target="_blank" 
-       class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm flex items-center gap-2">
-      📄 Print View
-    </a>
-    <a href="/calendar/print?date={{ selected_date }}&auto=true" target="_blank" 
-       class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm flex items-center gap-2">
-      🖨️ Print Direkte
-    </a>
+    <!-- Print buttons -->
+    <div class="flex gap-2">
+      <a href="/calendar/print?date={{ selected_date }}" target="_blank" 
+         class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm flex items-center gap-2">
+        📄 Print View
+      </a>
+      <a href="/calendar/print?date={{ selected_date }}&auto=true" target="_blank" 
+         class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm flex items-center gap-2">
+        🖨️ Print Direkte
+      </a>
+    </div>
   </div>
 </div>
 
@@ -110,17 +131,38 @@
     }
     const scenesData = getJsonData('scenes-data');
     const rawEvents = getJsonData('events-data');
-    // Find earliest and latest event times for dynamic calendar range
-    let minTime = '16:00';
-    let maxTime = '03:00';
+    
+    // Use festival day boundaries from backend
+    const festivalStartTime = '{{ festival_start_time }}';
+    const festivalEndTime = '{{ festival_end_time }}';
+    
+    let minTime = '06:00';
+    let maxTime = '05:59';
+    
+    // If we have events, calculate actual time range with buffer
     if (rawEvents.length > 0) {
         const times = rawEvents.flatMap(ev => [ev.start_time, ev.end_time].filter(Boolean));
         const dateObjs = times.map(t => new Date(t)).filter(d => !isNaN(d));
         if (dateObjs.length > 0) {
             const minDate = new Date(Math.min(...dateObjs.map(d => d.getTime())));
             const maxDate = new Date(Math.max(...dateObjs.map(d => d.getTime())));
-            minTime = minDate.toTimeString().slice(0,5);
-            maxTime = maxDate.toTimeString().slice(0,5);
+            
+            // Add 1 hour buffer before first event
+            minDate.setHours(minDate.getHours() - 1);
+            // Add 1 hour buffer after last event
+            maxDate.setHours(maxDate.getHours() + 1);
+            
+            // But respect festival day boundaries
+            const festStart = new Date(festivalStartTime);
+            const festEnd = new Date(festivalEndTime);
+            
+            // Use the later of festival start or buffered min time
+            const actualStart = minDate < festStart ? festStart : minDate;
+            // Use the earlier of festival end or buffered max time
+            const actualEnd = maxDate > festEnd ? festEnd : maxDate;
+            
+            minTime = actualStart.toTimeString().slice(0,5);
+            maxTime = actualEnd.toTimeString().slice(0,5);
         }
     }
     const eventsData = rawEvents.map(ev => ({
