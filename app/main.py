@@ -61,15 +61,36 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Be cautious using this in production if you manage migrations separately.
 # create_db_tables() # Commented out - Initialization moved to setup script
 
-app = FastAPI(title="Smukfest Risk Tool")
+# Check if we're in production mode (default to True for safety)
+PRODUCTION_MODE = os.getenv("PRODUCTION_MODE", "true").lower() == "true"
 
-# CORS Middleware (allow all for development)
+# Disable docs in production
+app = FastAPI(
+    title="Smukfest Risk Tool",
+    docs_url="/docs" if not PRODUCTION_MODE else None,
+    redoc_url="/redoc" if not PRODUCTION_MODE else None,
+    openapi_url="/openapi.json" if not PRODUCTION_MODE else None
+)
+
+# CORS Middleware configuration
+allowed_origins = [
+    "https://risiko.smukfest.dk",  # Production domain
+]
+
+# Add localhost for development if not in production mode
+if not PRODUCTION_MODE:
+    allowed_origins.extend([
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",  # Common frontend dev port
+    ])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all origins for development
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"], # Allow all methods
-    allow_headers=["*"], # Allow all headers
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Specific allowed methods
+    allow_headers=["*"],  # Consider restricting this too in the future
 )
 
 # Mount static files (like CSS if not using CDN)

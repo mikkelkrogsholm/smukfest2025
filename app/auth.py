@@ -75,7 +75,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 # --- Decode JWT and Get User (Internal Helper) ---
 def get_user_from_token(db: Session, token: str) -> Optional[models.User]:
     """Decodes JWT, validates, and retrieves the user from DB."""
-    print(f"[AUTH_DEBUG] Attempting to decode token: {token[:10]}...") # Log first 10 chars
+    # Debug logging removed for security - was exposing partial token
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -87,42 +87,42 @@ def get_user_from_token(db: Session, token: str) -> Optional[models.User]:
         role_str: str = payload.get("role") # Role stored as string in token
         if username is None or role_str is None:
             # Raise exception if essential data is missing
-            print(f"[AUTH_DEBUG] Payload missing sub or role. Username: {username}, Role: {role_str}")
+            # Invalid token payload - missing required fields
             raise credentials_exception 
         
         # Validate role string against enum
         try:
             token_role = models.UserRoleEnum(role_str)
-            print(f"[AUTH_DEBUG] Decoded payload - Username: '{username}', Role: {token_role}")
+            # Token successfully decoded
         except ValueError:
              # Invalid role value in token
-            print(f"[AUTH_DEBUG] Invalid role '{role_str}' in token payload.")
+            # Invalid role value in token
             raise credentials_exception
             
         token_data = TokenData(username=username, role=token_role)
     except JWTError as e:
         # Token invalid or expired
-        print(f"[AUTH_DEBUG] JWTError during decode: {e}")
+        # Token invalid or expired
         raise credentials_exception
     except Exception as e:
         # Catch any other unexpected error during decoding
-        print(f"[AUTH_DEBUG] Unexpected error during decode: {e}")
+        # Unexpected error during token decode
         raise credentials_exception # Re-raise as credentials error
     
-    print(f"[AUTH_DEBUG] Looking up user '{token_data.username}' in DB...")
+    # Look up user in database
     user = crud.get_user_by_username(db, username=token_data.username)
     if user is None:
         # User from token doesn't exist in DB
-        print(f"[AUTH_DEBUG] User '{token_data.username}' not found in DB.")
+        # User from token doesn't exist in DB
         raise credentials_exception
 
-    print(f"[AUTH_DEBUG] User '{user.username}' found in DB. Checking role...")
+    # Verify role consistency between token and DB
     # Optional: Verify role from token matches role in DB for extra security
     if user.role != token_data.role:
-        print(f"[AUTH_DEBUG] Role mismatch! Token: {token_data.role}, DB: {user.role}")
+        # Role mismatch between token and database
         raise credentials_exception
         
-    print(f"[AUTH_DEBUG] User '{user.username}' validation successful.")
+    # User validation successful
     return user
 
 # --- Get Current User from Cookie (Used in main.py login check) --- 
@@ -185,13 +185,16 @@ async def get_current_active_user(
 
 # --- Utility to set cookie --- 
 def set_auth_cookie(response: Response, token: str):
+    # Determine if we're in production (HTTPS) mode
+    is_production = os.getenv("PRODUCTION_MODE", "true").lower() == "true"
+    
     response.set_cookie(
         key=COOKIE_NAME,
         value=token,
         httponly=True,       # Prevent JS access
         samesite="lax",      # Good default for CSRF protection
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60, # In seconds
-        secure=False,        # TODO: Set to True if using HTTPS in production
+        secure=is_production, # Set to True in production (HTTPS), False in development
         path="/"             # Cookie applies to entire site
     )
 
