@@ -89,7 +89,7 @@
                                 <!-- DEBUG: Found {{ artist_events | length }} events for {{ artist.slug }} -->
                                 {% if artist_events %}
                                     {% for event in artist_events %}
-                                        <li>{{ event.start_time | datetimeformat('%A %H:%M, %d/%m-%Y') }} @ {{ event.stage.name if event.stage else 'TBA' }}</li>
+                                        <li>{{ event.start_time | datetimeformat_festival('%A %H:%M, %d/%m-%Y') }} @ {{ event.stage.name if event.stage else 'TBA' }}</li>
                                     {% endfor %}
                                 {% else %}
                                     <li class="text-gray-400 italic">Ingen planlagt endnu.</li>
@@ -158,7 +158,7 @@
                         data-stage="{{ event.stage.name | default('TBA', true) if event.stage else 'TBA' }}"
                         data-risk="{{ assessments.get(event.artist_slug).risk_level if assessments.get(event.artist_slug) else 'none' }}">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ event.start_time | datetimeformat('%A, %d/%m-%Y %H:%M') }}
+                            {{ event.start_time | datetimeformat_festival('%A, %d/%m-%Y %H:%M') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">

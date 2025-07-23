@@ -86,6 +86,13 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # Register the filter with Jinja2 environment (import from utils)
 templates.env.filters['datetimeformat'] = format_datetime
+
+# Add festival-aware datetime formatting filter
+def datetimeformat_festival(value, format_str="%A %H:%M, %d/%m-%Y"):
+    """Festival-aware datetime formatting that handles festival days correctly"""
+    return format_datetime(value, format_str, use_festival_day=True)
+
+templates.env.filters['datetimeformat_festival'] = datetimeformat_festival
 templates.env.globals['now'] = datetime_now # Make now() available (import from utils)
 # --- End Custom Filter ---
 

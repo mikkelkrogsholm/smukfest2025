@@ -58,17 +58,17 @@
     <div class="p-6 md:p-8">
         <!-- Performances -->
         <div class="mb-8">
-            <h2 class="text-xl font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">Optædener</h2>
+            <h2 class="text-xl font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">Optrædener</h2>
             {% if events %}
                 <ul class="space-y-2">
                     {% for event in events %}
                         <li class="text-sm text-gray-800 bg-gray-50 p-2 rounded">
-                            <span class="font-medium">{{ event.start_time | datetimeformat('%A %H:%M, %d/%m-%Y') }}</span> @ <span class="font-medium">{{ event.stage.name if event.stage else 'TBA' }}</span>
+                            <span class="font-medium">{{ event.start_time | datetimeformat_festival('%A %H:%M, %d/%m-%Y') }}</span> @ <span class="font-medium">{{ event.stage.name if event.stage else 'TBA' }}</span>
                         </li>
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-sm text-gray-500 italic">Ingen planlagte optædener fundet.</p>
+                <p class="text-sm text-gray-500 italic">Ingen planlagte optrædener fundet.</p>
             {% endif %}
         </div>
 
